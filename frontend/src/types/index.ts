@@ -72,10 +72,10 @@ export interface PrescriptionMedication {
   medicationId: string
   name: string
   genericName: string
-  dosage: string
+  dosage?: string
   frequency: string
   instructions: string
-  refills: number
+  refills?: number
   duration: string
   cost: number
   insuranceCovered: boolean

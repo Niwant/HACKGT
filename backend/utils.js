@@ -138,52 +138,28 @@ ${JSON.stringify(
 ${JSON.stringify(coverage, null, 2)}
 
 TASK
-1) From the label text, extract concise sections:
-   - indications[]
-   - contraindications[]
-   - warnings[]
-   - interactions[]
-   - active_ingredients[]
-   - renal_considerations[]
-   - hepatic_considerations[]
-2) Match against the patient snapshot to produce:
+1) Match against the patient snapshot to produce:
    - flags.high (contraindication or severe allergy)
    - flags.medium (interaction risks, serious warnings based on conditions)
-   - flags.info (renal/hepatic dose considerations, geriatrics/pediatrics if relevant)
+   - flags.info (summary of the flags)
    For each flag include: {type, reason, evidence, matchedPatientData}
-3) Create a short HCP summary (<=120 words) telling what matters now.
-4) Build a cost_coverage summary using plan/formulary/cost tables if available:
-   - {covered: true/false/unknown, tier: string|null, pa_required: Y/N/null, step_therapy: Y/N/null,
-      qty_limit: Y/N/null, estimated_30_day_cost_pref: number|null, notes: string}
-5) Output STRICT JSON with the following schema (no prose, no markdown):
+3) Create a short HCP summary (<=120 words) telling patients allergy , reccomended dosage , gender , and such important information and compare it with the drug information do not mention age and any other personal details of the patient.
+  "cost_coverage": {.
+4) Output STRICT JSON with the following schema (no prose, no markdown):
 
 {
-  "drug": {
-    "brand": string|null,
-    "generic": string|null,
-    "active_ingredients": string[]
-  },
-  "sections": {
-    "indications": string[],
-    "contraindications": string[],
-    "warnings": string[],
-    "interactions": string[],
-    "renal_considerations": string[],
-    "hepatic_considerations": string[]
-  },
   "flags": {
     "high": Array<{type:string, reason:string, evidence:string, matchedPatientData:string}>,
     "medium": Array<{type:string, reason:string, evidence:string, matchedPatientData:string}>,
     "info": Array<{type:string, reason:string, evidence:string, matchedPatientData:string}>
   },
-  "hcp_summary": string,
-  "cost_coverage": {
-    "covered": boolean|null,
-    "tier": string|null,
-    "pa_required": "Y"|"N"|null,
-    "step_therapy": "Y"|"N"|null,
-    "qty_limit": "Y"|"N"|null,
-    "estimated_30_day_cost_pref": number|null,
+  "hcp_summary": string
+    "covered": boolean,
+    "tier": string,
+    "pa_required": "Y"|"N",
+    "step_therapy": "Y"|"N",
+    "qty_limit": "Y"|"N",
+    "estimated_30_day_cost_pref": number,
     "notes": string|null
   }
 }

@@ -43,51 +43,11 @@ export function PatientProfileModal({ patient, isOpen, onClose }: PatientProfile
   const [coverageInfo, setCoverageInfo] = useState<Record<string, CoverageInfo>>({})
   const [loadingCoverage, setLoadingCoverage] = useState<Record<string, boolean>>({})
 
-  if (!patient) return null
-
-  // Mock EMR data - in real app, this would come from API
-  const mockEMR: EMR[] = [
+  // Mock prescriptions data - converted to state so it can be updated
+  const [mockPrescriptions, setMockPrescriptions] = useState<Prescription[]>([
     {
       id: '1',
-      patientId: patient.id,
-      physicianId: 'physician-1',
-      type: 'vitals',
-      title: 'Blood Pressure Reading',
-      content: 'Blood pressure measured during routine check-up',
-      value: '120/80',
-      unit: 'mmHg',
-      date: new Date('2024-01-15'),
-      isUrgent: false
-    },
-    {
-      id: '2',
-      patientId: patient.id,
-      physicianId: 'physician-1',
-      type: 'diagnosis',
-      title: 'Type 2 Diabetes',
-      content: 'Patient diagnosed with Type 2 Diabetes based on HbA1c levels',
-      date: new Date('2024-01-10'),
-      isUrgent: false
-    },
-    {
-      id: '3',
-      patientId: patient.id,
-      physicianId: 'physician-1',
-      type: 'lab',
-      title: 'HbA1c Test Results',
-      content: 'Latest HbA1c test results',
-      value: '7.1',
-      unit: '%',
-      date: new Date('2024-01-12'),
-      isUrgent: false
-    }
-  ]
-
-  // Mock prescriptions data
-  const mockPrescriptions: Prescription[] = [
-    {
-      id: '1',
-      patientId: patient.id,
+      patientId: patient?.id || '',
       physicianId: 'physician-1',
       diagnosis: 'Type 2 Diabetes with Hypertension',
       icdCode: 'E11.9, I10',
@@ -133,7 +93,7 @@ export function PatientProfileModal({ patient, isOpen, onClose }: PatientProfile
     },
     {
       id: '2',
-      patientId: patient.id,
+      patientId: patient?.id || '',
       physicianId: 'physician-1',
       diagnosis: 'Allergic Rhinitis',
       icdCode: 'J30.9',
@@ -163,7 +123,48 @@ export function PatientProfileModal({ patient, isOpen, onClose }: PatientProfile
       },
       notes: 'Seasonal allergy management. Start 2 weeks before allergy season.'
     }
+  ])
+
+  if (!patient) return null
+
+  // Mock EMR data - in real app, this would come from API
+  const mockEMR: EMR[] = [
+    {
+      id: '1',
+      patientId: patient.id,
+      physicianId: 'physician-1',
+      type: 'vitals',
+      title: 'Blood Pressure Reading',
+      content: 'Blood pressure measured during routine check-up',
+      value: '120/80',
+      unit: 'mmHg',
+      date: new Date('2024-01-15'),
+      isUrgent: false
+    },
+    {
+      id: '2',
+      patientId: patient.id,
+      physicianId: 'physician-1',
+      type: 'diagnosis',
+      title: 'Type 2 Diabetes',
+      content: 'Patient diagnosed with Type 2 Diabetes based on HbA1c levels',
+      date: new Date('2024-01-10'),
+      isUrgent: false
+    },
+    {
+      id: '3',
+      patientId: patient.id,
+      physicianId: 'physician-1',
+      type: 'lab',
+      title: 'HbA1c Test Results',
+      content: 'Latest HbA1c test results',
+      value: '7.1',
+      unit: '%',
+      date: new Date('2024-01-12'),
+      isUrgent: false
+    }
   ]
+
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -205,8 +206,21 @@ export function PatientProfileModal({ patient, isOpen, onClose }: PatientProfile
   }
 
   const handleSavePrescription = (prescription: Omit<Prescription, 'id' | 'patientId' | 'physicianId' | 'createdAt'>) => {
+    // Create a complete prescription object with required fields
+    const completePrescription: Prescription = {
+      ...prescription,
+      id: `prescription-${Date.now()}`,
+      patientId: patient?.id || '',
+      physicianId: 'physician-1',
+      createdAt: new Date()
+    }
+    
+    // Add to mock prescriptions array using state setter
+    setMockPrescriptions(prev => [...prev, completePrescription])
+    console.log('Prescription added to mock data:', completePrescription)
+    console.log('Total prescriptions now:', mockPrescriptions.length + 1)
+    
     // In a real app, this would save to the backend
-    console.log('Saving prescription:', prescription)
     // You could dispatch to context or call an API here
   }
 

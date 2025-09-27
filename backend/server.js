@@ -207,9 +207,9 @@ app.get('/api/coverage', async (req, res) => {
       WHERE dpc.PATIENT_ID = ? AND dpc.RXCUI = ?
       LIMIT 1
     `;
-    
+    console.log(patientId, rxcui);
     const rows = await executeQuery(sql, [patientId, rxcui]);
-    
+    console.log(rows);
     if (rows.length === 0) {
       return res.json({ covered: false });
     }
@@ -230,6 +230,60 @@ app.get('/api/coverage', async (req, res) => {
   }
 });
 
+// Cost endpoint
+app.get('/api/cost', async (req, res) => {
+  try {
+    const { patientId, rxcui, daysSupply, coverageLevel, channel = 'RETAIL', preferred = '1' } = req.query;
+    if (!patientId || !rxcui || !daysSupply || !coverageLevel) {
+      return res.status(400).json({ error: 'patientId, rxcui, daysSupply, coverageLevel required' });
+    }
+    console.log(patientId, rxcui, daysSupply, coverageLevel, channel, preferred);
+    const { executeQuery } = require('./config/database');
+    
+    const sql = `
+      SELECT dcm.PATIENT_ID, dcm.RXCUI, dcm.TIER,
+             dcm.COVERAGE_LEVEL, dcm.DAYS_SUPPLY,
+             CASE
+               WHEN ? = 'MAIL'   AND ? = 1 THEN dcm.COST_AMT_MAIL_PREF
+               WHEN ? = 'MAIL'   AND ? = 0 THEN dcm.COST_AMT_MAIL_NONPREF
+               WHEN ? = 'RETAIL' AND ? = 1 THEN dcm.COST_AMT_PREF
+               WHEN ? = 'RETAIL' AND ? = 0 THEN dcm.COST_AMT_NONPREF
+             END AS ESTIMATED_OOP,
+             dcm.TIER_SPECIALTY_YN, dcm.DED_APPLIES_YN
+      FROM v_drug_cost_matrix dcm
+      WHERE dcm.PATIENT_ID = ?
+        AND dcm.RXCUI = ?
+        AND dcm.COVERAGE_LEVEL = ?
+        AND dcm.DAYS_SUPPLY = ?
+      LIMIT 1
+    `;
+    
+    const params = [channel, Number(preferred), channel, Number(preferred), channel, Number(preferred), channel, Number(preferred),
+                    patientId, rxcui, coverageLevel, Number(daysSupply)];
+    
+    console.log('Cost endpoint params:', params);
+    const rows = await executeQuery(sql, params);
+    console.log('Cost endpoint rows:', rows);
+    
+    if (rows.length === 0) return res.json({ found: false });
+    
+    const r = rows[0];
+    res.json({
+      found: true,
+      tier: r.TIER,
+      estimatedOutOfPocket: r.ESTIMATED_OOP,
+      specialtyTier: r.TIER_SPECIALTY_YN === 'Y',
+      deductibleApplies: r.DED_APPLIES_YN === 'Y'
+    });
+  } catch (error) {
+    console.error('Cost endpoint error:', error);
+    res.status(500).json({ error: 'internal' });
+  }
+});
+
+// Prescription analysis endpoint
+
+
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
@@ -239,7 +293,9 @@ app.get('/', (req, res) => {
       health: '/health',
       test: '/api/test',
       dbTest: '/api/db-test',
-      coverage: '/api/coverage?patientId=...&rxcui=...'
+      coverage: '/api/coverage?patientId=...&rxcui=...',
+      cost: '/api/cost?patientId=...&rxcui=...&daysSupply=30&coverageLevel=Initial%20Coverage&channel=RETAIL&preferred=1',
+      prescriptionAnalysis: 'POST /api/prescription-analysis'
     }
   });
 });
