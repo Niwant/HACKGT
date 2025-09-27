@@ -1,8 +1,20 @@
 const express = require('express');
 const cors = require('cors');
+const multer = require('multer');
+
+const {
+  parsePdfToText,
+  getPatientSnapshotAndCostSignals,
+  buildPrompt,
+  callLLM,
+} = require('./utils');
+
 require('dotenv').config();
 
-const { testConnection, initializeDatabase } = require('./config/database');
+const { testConnection, initializeDatabase, executeQuery } = require('./config/database');
+
+const { Readable } = require("stream");
+const { setTimeout: delay } = require("timers/promises");
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -11,6 +23,131 @@ const PORT = process.env.PORT || 5001;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+async function fetchWithRetry(url, opts = {}, retries = 2, timeoutMs = 15000) {
+  for (let attempt = 0; ; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { ...opts, signal: controller.signal });
+      clearTimeout(timer);
+
+      if (!res.ok && attempt < retries) {
+        await delay(300 * (attempt + 1));
+        continue;
+      }
+      return res;
+    } catch (err) {
+      clearTimeout(timer);
+      if (attempt < retries) {
+        await delay(300 * (attempt + 1));
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
+async function getDailyMedSetIdFromRxcui(rxcui) {
+  const url = `https://dailymed.nlm.nih.gov/dailymed/services/v2/spls.json?rxcui=${encodeURIComponent(
+    rxcui
+  )}&pagesize=1`;
+
+  const resp = await fetchWithRetry(url);
+  if (!resp.ok) throw new Error(`DailyMed SPLs request failed (${resp.status})`);
+  const json = await resp.json();
+
+  const first = json?.data?.[0];
+  const setId = first?.setid || first?.setId || first?.set_id || first?.id || null;
+  return setId || null;
+}
+
+async function getDailyMedPdfResponseBySetId(setId) {
+  const pdfUrl = `https://dailymed.nlm.nih.gov/dailymed/downloadpdffile.cfm?setId=${encodeURIComponent(
+    setId
+  )}`;
+  const resp = await fetchWithRetry(pdfUrl);
+  if (!resp.ok) throw new Error(`DailyMed PDF download failed (${resp.status})`);
+  return resp; // has .body (web ReadableStream)
+}
+
+async function getDailyMedPdfBufferByRxcui(rxcui) {
+  const setId = await getDailyMedSetIdFromRxcui(rxcui);
+  if (!setId) throw new Error(`No SPL setId found for RXCUI ${rxcui}`);
+  const pdfResp = await getDailyMedPdfResponseBySetId(setId);
+  const ab = await pdfResp.arrayBuffer();
+  return { buffer: Buffer.from(ab), setId, contentType: pdfResp.headers.get("content-type") || "application/pdf" };
+}
+
+app.get("/api/drug-label.pdf", async (req, res) => {
+  const rxcui = String(req.query.rxcui || "").trim();
+  if (!rxcui) return res.status(400).json({ error: "Missing query param: rxcui" });
+
+  try {
+    const setId = await getDailyMedSetIdFromRxcui(rxcui);
+    if (!setId) return res.status(404).json({ error: `No SPL setId found for RXCUI ${rxcui}` });
+
+    const pdfResp = await getDailyMedPdfResponseBySetId(setId);
+    const ct = pdfResp.headers.get("content-type") || "application/pdf";
+    const cl = pdfResp.headers.get("content-length") || undefined;
+
+    res.setHeader("Content-Type", ct);
+    if (cl) res.setHeader("Content-Length", cl);
+    res.setHeader("Content-Disposition", `attachment; filename="${setId}.pdf"`);
+
+    // Pipe the web ReadableStream to Node response
+    Readable.fromWeb(pdfResp.body).pipe(res);
+  } catch (err) {
+    console.error("DailyMed PDF proxy error:", err);
+    res.status(500).json({ error: "Unexpected error fetching DailyMed PDF", detail: err.message });
+  }
+});
+
+app.post("/api/evidence/digest-rxcui", async (req, res) => {
+  try {
+    const rxcui = String(req.body?.rxcui || "").trim();
+    const patientId = String(req.body?.patientId || "").trim();
+    if (!rxcui) return res.status(400).json({ error: "rxcui is required" });
+    if (!patientId) return res.status(400).json({ error: "patientId is required" });
+
+    // 1) Fetch DailyMed PDF internally
+    const { buffer: pdfBuffer } = await getDailyMedPdfBufferByRxcui(rxcui);
+
+    // 2) PDF → text (reusing your existing util)
+    const pdfText = await parsePdfToText(pdfBuffer);
+
+    // 3) EMR + coverage
+    const snapshot = await getPatientSnapshotAndCostSignals(patientId, rxcui);
+    if (!snapshot) return res.status(404).json({ error: "Patient not found" });
+
+    // 4) Prompt the LLM
+    const prompt = buildPrompt({
+      pdfText,
+      rxcui,
+      patient: {
+        core: snapshot.core,
+        conditions: snapshot.conditions,
+        allergies: snapshot.allergies,
+        meds: snapshot.meds,
+        labs: snapshot.labs,
+      },
+      coverage: snapshot.coverage,
+    });
+
+    const llmJson = await callLLM(prompt);
+
+    // 5) Respond
+    res.json({
+      rxcui,
+      patientId,
+      coverage: snapshot.coverage,
+      result: llmJson,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to process evidence digest from RXCUI", detail: err.message });
+  }
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {
