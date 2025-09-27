@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { 
@@ -18,10 +19,16 @@ import {
   MapPin,
   AlertTriangle,
   CheckCircle,
-  Clock
+  Clock,
+  Shield,
+  DollarSign
 } from 'lucide-react'
-import { Patient, EMR, Prescription } from '@/types'
+import { Patient, EMR, Prescription, CoverageInfo } from '@/types'
 import { format } from 'date-fns'
+import PriorAuthPdfFiller, { exampleFieldMap } from "./PriorAuthPdfFiller"
+import { NewEMREntryModal } from './NewEMREntryModal'
+import { NewPrescriptionModal } from './NewPrescriptionModal'
+import { fetchCoverageInfo } from '@/lib/api'
 
 interface PatientProfileModalProps {
   patient: Patient | null
@@ -31,6 +38,10 @@ interface PatientProfileModalProps {
 
 export function PatientProfileModal({ patient, isOpen, onClose }: PatientProfileModalProps) {
   const [activeTab, setActiveTab] = useState<'summary' | 'emr' | 'prescriptions'>('summary')
+  const [isEMRModalOpen, setIsEMRModalOpen] = useState(false)
+  const [isPrescriptionModalOpen, setIsPrescriptionModalOpen] = useState(false)
+  const [coverageInfo, setCoverageInfo] = useState<Record<string, CoverageInfo>>({})
+  const [loadingCoverage, setLoadingCoverage] = useState<Record<string, boolean>>({})
 
   if (!patient) return null
 
@@ -78,21 +89,79 @@ export function PatientProfileModal({ patient, isOpen, onClose }: PatientProfile
       id: '1',
       patientId: patient.id,
       physicianId: 'physician-1',
-      medicationId: 'med-1',
-      diagnosis: 'Type 2 Diabetes',
-      icdCode: 'E11.9',
-      dosage: '500mg',
-      frequency: 'Twice daily',
-      instructions: 'Take with meals to reduce stomach upset',
+      diagnosis: 'Type 2 Diabetes with Hypertension',
+      icdCode: 'E11.9, I10',
       startDate: new Date('2024-01-01'),
-      refills: 3,
       status: 'active',
       createdAt: new Date('2024-01-01'),
+      medications: [
+        {
+          id: 'med-1',
+          medicationId: 'metformin-500',
+          name: 'Metformin',
+          genericName: 'Metformin HCl',
+          dosage: '500mg',
+          frequency: 'Twice daily',
+          instructions: 'Take with meals to reduce stomach upset',
+          refills: 3,
+          duration: '90 days',
+          cost: 15.99,
+          insuranceCovered: true,
+          rxcui: '1551300' // Metformin RxCUI
+        },
+        {
+          id: 'med-2',
+          medicationId: 'lisinopril-10',
+          name: 'Lisinopril',
+          genericName: 'Lisinopril',
+          dosage: '10mg',
+          frequency: 'Once daily',
+          instructions: 'Take at the same time each day',
+          refills: 3,
+          duration: '90 days',
+          cost: 8.50,
+          insuranceCovered: true,
+          rxcui: '314076' // Lisinopril RxCUI
+        }
+      ],
       safetyChecks: {
         allergies: true,
         interactions: true,
+        renalAdjustment: true
+      },
+      notes: 'Patient responding well to combination therapy. Monitor blood pressure and blood sugar levels.'
+    },
+    {
+      id: '2',
+      patientId: patient.id,
+      physicianId: 'physician-1',
+      diagnosis: 'Allergic Rhinitis',
+      icdCode: 'J30.9',
+      startDate: new Date('2024-01-15'),
+      status: 'active',
+      createdAt: new Date('2024-01-15'),
+      medications: [
+        {
+          id: 'med-3',
+          medicationId: 'loratadine-10',
+          name: 'Loratadine',
+          genericName: 'Loratadine',
+          dosage: '10mg',
+          frequency: 'Once daily',
+          instructions: 'Take with or without food',
+          refills: 2,
+          duration: '60 days',
+          cost: 12.99,
+          insuranceCovered: true,
+          rxcui: '313406' // Loratadine RxCUI
+        }
+      ],
+      safetyChecks: {
+        allergies: true,
+        interactions: false,
         renalAdjustment: false
-      }
+      },
+      notes: 'Seasonal allergy management. Start 2 weeks before allergy season.'
     }
   ]
 
@@ -126,6 +195,51 @@ export function PatientProfileModal({ patient, isOpen, onClose }: PatientProfile
       case 'note': return 'text-gray-600'
       case 'medication': return 'text-orange-600'
       default: return 'text-gray-600'
+    }
+  }
+
+  const handleSaveEMREntry = (entry: Omit<EMR, 'id' | 'patientId' | 'physicianId'>) => {
+    // In a real app, this would save to the backend
+    console.log('Saving EMR entry:', entry)
+    // You could dispatch to context or call an API here
+  }
+
+  const handleSavePrescription = (prescription: Omit<Prescription, 'id' | 'patientId' | 'physicianId' | 'createdAt'>) => {
+    // In a real app, this would save to the backend
+    console.log('Saving prescription:', prescription)
+    // You could dispatch to context or call an API here
+  }
+
+  const handleCheckCoverage = async (medicationId: string, rxcui: string) => {
+    if (!patient) return
+    
+    const key = `${medicationId}-${rxcui}`
+    setLoadingCoverage(prev => ({ ...prev, [key]: true }))
+    
+    try {
+      const result = await fetchCoverageInfo(patient.id, rxcui)
+      if (result.success && result.data) {
+        setCoverageInfo(prev => ({ ...prev, [key]: result.data! }))
+      } else {
+        console.error('Failed to fetch coverage info:', result.error)
+      }
+    } catch (error) {
+      console.error('Error checking coverage:', error)
+    } finally {
+      setLoadingCoverage(prev => ({ ...prev, [key]: false }))
+    }
+  }
+
+  const getCoverageStatusBadge = (coverage: CoverageInfo) => {
+    switch (coverage.coverageStatus) {
+      case 'covered':
+        return <Badge variant="default" className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Covered</Badge>
+      case 'not_covered':
+        return <Badge variant="destructive"><AlertTriangle className="w-3 h-3 mr-1" />Not Covered</Badge>
+      case 'prior_auth_required':
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800"><Shield className="w-3 h-3 mr-1" />Prior Auth Required</Badge>
+      default:
+        return <Badge variant="outline">Unknown</Badge>
     }
   }
 
@@ -288,34 +402,25 @@ export function PatientProfileModal({ patient, isOpen, onClose }: PatientProfile
               <TabsContent value="emr" className="space-y-6">
                 <div className="flex justify-between items-center">
                   <h3 className="text-xl font-semibold">Electronic Medical Records</h3>
-                  <Button size="lg">
+                  <Button size="lg" onClick={() => setIsEMRModalOpen(true)}>
                     Add New Entry
                   </Button>
                 </div>
                 
-                <div className="grid lg:grid-cols-2 gap-6">
+                <Accordion type="multiple" className="w-full">
                   {mockEMR.map((record) => (
-                    <Card key={record.id} className={record.isUrgent ? 'border-red-200 bg-red-50' : ''}>
-                      <CardContent className="p-6">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start space-x-4">
-                            <div className={`mt-1 ${getEMRTypeColor(record.type)}`}>
-                              {getEMRTypeIcon(record.type)}
-                            </div>
-                            <div className="flex-1">
+                    <AccordionItem key={record.id} value={record.id} className={record.isUrgent ? 'border-red-200 bg-red-50' : ''}>
+                      <AccordionTrigger className="hover:no-underline">
+                        <div className="flex items-center space-x-4 w-full">
+                          <div className={`${getEMRTypeColor(record.type)}`}>
+                            {getEMRTypeIcon(record.type)}
+                          </div>
+                          <div className="flex-1 text-left">
+                            <div className="flex items-center justify-between">
                               <h4 className="font-semibold text-lg">{record.title}</h4>
-                              <p className="text-gray-600 mt-2">{record.content}</p>
-                              {record.value && (
-                                <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                                  <p className="text-lg font-bold text-gray-800">
-                                    {record.value} <span className="text-sm font-normal text-gray-600">{record.unit}</span>
-                                  </p>
-                                </div>
-                              )}
-                              <div className="flex items-center space-x-3 mt-4">
-                                <Clock className="w-4 h-4 text-gray-400" />
+                              <div className="flex items-center space-x-3">
                                 <span className="text-sm text-gray-500">
-                                  {format(record.date, 'MMM dd, yyyy HH:mm')}
+                                  {format(record.date, 'MMM dd, yyyy')}
                                 </span>
                                 {record.isUrgent && (
                                   <Badge variant="destructive" className="text-sm">
@@ -324,84 +429,346 @@ export function PatientProfileModal({ patient, isOpen, onClose }: PatientProfile
                                 )}
                               </div>
                             </div>
+                            <p className="text-gray-600 text-sm mt-1 truncate">
+                              {record.content}
+                            </p>
+                            {record.value && (
+                              <div className="mt-2 inline-block">
+                                <span className="text-sm font-medium text-gray-700">
+                                  {record.value} {record.unit}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
+                      </AccordionTrigger>
+                      <AccordionContent className="pt-4">
+                        <div className="pl-12 space-y-4">
+                          <div>
+                            <h5 className="font-medium text-gray-800 mb-2">Details</h5>
+                            <p className="text-gray-600">{record.content}</p>
+                          </div>
+                          
+                          {record.value && (
+                            <div className="p-4 bg-gray-50 rounded-lg">
+                              <h5 className="font-medium text-gray-800 mb-2">Measurement</h5>
+                              <p className="text-2xl font-bold text-gray-800">
+                                {record.value} <span className="text-lg font-normal text-gray-600">{record.unit}</span>
+                              </p>
+                            </div>
+                          )}
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <h5 className="font-medium text-gray-800 mb-1">Record Type</h5>
+                              <Badge variant="outline" className="capitalize">
+                                {record.type}
+                              </Badge>
+                            </div>
+                            <div>
+                              <h5 className="font-medium text-gray-800 mb-1">Date & Time</h5>
+                              <p className="text-sm text-gray-600">
+                                {format(record.date, 'MMM dd, yyyy HH:mm')}
+                              </p>
+                            </div>
+                          </div>
+
+                          {record.attachments && record.attachments.length > 0 && (
+                            <div>
+                              <h5 className="font-medium text-gray-800 mb-2">Attachments</h5>
+                              <div className="space-y-2">
+                                {record.attachments.map((attachment, index) => (
+                                  <div key={index} className="flex items-center space-x-2 text-sm text-blue-600">
+                                    <FileText className="w-4 h-4" />
+                                    <span>{attachment}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="flex space-x-2 pt-2">
+                            <Button variant="outline" size="sm">
+                              Edit
+                            </Button>
+                            <Button variant="outline" size="sm">
+                              Add Note
+                            </Button>
+                            {record.isUrgent && (
+                              <Button variant="destructive" size="sm">
+                                Mark Resolved
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
                   ))}
-                </div>
+                </Accordion>
               </TabsContent>
 
               {/* Prescriptions Tab */}
               <TabsContent value="prescriptions" className="space-y-6">
                 <div className="flex justify-between items-center">
                   <h3 className="text-xl font-semibold">Current Prescriptions</h3>
-                  <Button size="lg">
+                  <Button size="lg" onClick={() => setIsPrescriptionModalOpen(true)}>
                     New Prescription
                   </Button>
                 </div>
-                
-                <div className="grid lg:grid-cols-2 gap-6">
+                <PriorAuthPdfFiller
+  src="/HiLab-Prior-Authorization-Request-Form_1-28-22.pdf"
+  data={
+    {
+            'patient.first_name': 'Jane',
+            'patient.last_name': 'Doe',
+            'patient.phone': '(555) 123-4567',
+            'patient.address': '123 Main St',
+            'patient.city': 'Charlotte',
+            'patient.state': 'NC',
+            'patient.zip': '28223',
+            'patient.dob': '1990-01-01',
+            'patient.sex_female': true,
+            'insurance.primary': 'Blue Cross',
+            'insurance.primary_id': 'ABC12345',
+            'med.name': 'MedExample 40 mg',
+            'p2.patient_name': 'Jane Doe',
+            'p2.id': 'ABC12345',
+            'p2.trials': [
+              { drug: 'DrugA 20mg', duration: '01/2024–03/2024', response: 'Ineffective' },
+              { drug: 'DrugB 10mg', duration: '03/2024–05/2024', response: 'Allergy (rash)' },
+            ],
+            'p2.icd10': 'E11.9; I10',
+          }
+  }
+  fieldMap={exampleFieldMap}
+  fileName="HiLab-Prior-Authorization-Request-Form_FILLED.pdf"
+  debugGrid
+  showCrosshairs
+ // main fix: drop everything down ~0.5"
+//  yOffset={-36}
+ // page 2 usually needs a hair more:
+ pageOffsets={{ 1: { y: -42 } }}
+/>
+
+                <Accordion type="multiple" className="w-full">
                   {mockPrescriptions.map((prescription) => (
-                    <Card key={prescription.id}>
-                      <CardContent className="p-6">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-xl">Metformin</h4>
-                            <div className="mt-4 space-y-3">
-                              <div className="p-3 bg-blue-50 rounded-lg">
-                                <p className="text-sm font-medium text-blue-800">
-                                  <strong>Diagnosis:</strong> {prescription.diagnosis} ({prescription.icdCode})
-                                </p>
-                              </div>
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-700">Dosage</p>
-                                  <p className="text-lg font-semibold">{prescription.dosage}</p>
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium text-gray-700">Frequency</p>
-                                  <p className="text-lg font-semibold">{prescription.frequency}</p>
-                                </div>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-700 mb-2">Instructions</p>
-                                <p className="text-gray-600">{prescription.instructions}</p>
-                              </div>
-                              <div className="flex items-center space-x-6 mt-4 text-sm text-gray-500">
-                                <span>Started: {format(prescription.startDate, 'MMM dd, yyyy')}</span>
-                                <span>Refills: {prescription.refills}</span>
+                    <AccordionItem key={prescription.id} value={prescription.id} className="border-l-4 border-l-blue-500">
+                      <AccordionTrigger className="hover:no-underline">
+                        <div className="flex items-center space-x-4 w-full">
+                          <div className="text-blue-600">
+                            <Pill className="w-6 h-6" />
+                          </div>
+                          <div className="flex-1 text-left">
+                            <div className="flex items-center justify-between">
+                              <h4 className="font-semibold text-xl text-blue-900">
+                                {prescription.diagnosis}
+                              </h4>
+                              <div className="flex items-center space-x-4">
                                 <Badge variant={prescription.status === 'active' ? 'default' : 'secondary'} className="text-sm">
                                   {prescription.status}
                                 </Badge>
+                                <span className="text-sm text-gray-500">
+                                  {format(prescription.startDate, 'MMM dd, yyyy')}
+                                </span>
                               </div>
                             </div>
-                          </div>
-                          <div className="text-right ml-6">
-                            <div className="space-y-3">
-                              <div className="flex items-center space-x-2 text-sm">
+                            <p className="text-sm text-blue-700 mt-1">
+                              <strong>ICD:</strong> {prescription.icdCode}
+                            </p>
+                            <div className="flex items-center space-x-4 mt-2">
+                              <span className="text-sm text-gray-600">
+                                {prescription.medications.length} medication{prescription.medications.length !== 1 ? 's' : ''}
+                              </span>
+                              <div className="flex items-center space-x-2">
                                 <CheckCircle className="w-4 h-4 text-green-600" />
-                                <span>Allergies checked</span>
-                              </div>
-                              <div className="flex items-center space-x-2 text-sm">
-                                <CheckCircle className="w-4 h-4 text-green-600" />
-                                <span>Interactions checked</span>
-                              </div>
-                              <div className="flex items-center space-x-2 text-sm">
-                                <Clock className="w-4 h-4 text-gray-400" />
-                                <span>Renal adjustment</span>
+                                <span className="text-xs text-gray-500">Safety checked</span>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
+                      </AccordionTrigger>
+                      <AccordionContent className="pt-4">
+                        <div className="pl-12 space-y-6">
+                          {/* Safety Checks */}
+                          <div className="p-4 bg-green-50 rounded-lg">
+                            <h5 className="font-semibold text-green-800 mb-3">Safety Checks</h5>
+                            <div className="grid grid-cols-3 gap-4">
+                              <div className="flex items-center space-x-2">
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                                <span className="text-sm">Allergies checked</span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                                <span className="text-sm">Interactions checked</span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                {prescription.safetyChecks.renalAdjustment ? (
+                                  <CheckCircle className="w-4 h-4 text-green-600" />
+                                ) : (
+                                  <Clock className="w-4 h-4 text-gray-400" />
+                                )}
+                                <span className="text-sm">Renal adjustment</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Medications List */}
+                          <div>
+                            <h5 className="font-semibold text-lg text-gray-800 mb-4">
+                              Medications ({prescription.medications.length})
+                            </h5>
+                            <div className="space-y-4">
+                              {prescription.medications.map((medication) => (
+                                <div key={medication.id} className="p-4 border rounded-lg bg-gray-50">
+                                  <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                      <h6 className="font-semibold text-lg text-gray-800">
+                                        {medication.name}
+                                      </h6>
+                                      <p className="text-sm text-gray-600 mb-3">
+                                        {medication.genericName}
+                                      </p>
+                                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
+                                        <div>
+                                          <p className="text-xs font-medium text-gray-700">Dosage</p>
+                                          <p className="text-sm font-semibold">{medication.dosage}</p>
+                                        </div>
+                                        <div>
+                                          <p className="text-xs font-medium text-gray-700">Frequency</p>
+                                          <p className="text-sm font-semibold">{medication.frequency}</p>
+                                        </div>
+                                        <div>
+                                          <p className="text-xs font-medium text-gray-700">Duration</p>
+                                          <p className="text-sm font-semibold">{medication.duration}</p>
+                                        </div>
+                                        <div>
+                                          <p className="text-xs font-medium text-gray-700">Refills</p>
+                                          <p className="text-sm font-semibold">{medication.refills}</p>
+                                        </div>
+                                      </div>
+                                      <div className="mb-3">
+                                        <p className="text-xs font-medium text-gray-700 mb-1">Instructions</p>
+                                        <p className="text-sm text-gray-600">{medication.instructions}</p>
+                                      </div>
+                                      <div className="flex items-center space-x-4 text-sm">
+                                        <span className="text-gray-600">
+                                          <strong>Cost:</strong> ${medication.cost}
+                                        </span>
+                                        <span className="text-gray-600">
+                                          <strong>Insurance:</strong> {medication.insuranceCovered ? 'Covered' : 'Not Covered'}
+                                        </span>
+                                      </div>
+                                      
+                                      {/* Coverage Information */}
+                                      {medication.rxcui && (
+                                        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                          <div className="flex items-center justify-between mb-2">
+                                            <h6 className="font-medium text-blue-900 flex items-center">
+                                              <Shield className="w-4 h-4 mr-2" />
+                                              Insurance Coverage Status
+                                            </h6>
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={() => handleCheckCoverage(medication.id, medication.rxcui!)}
+                                              disabled={loadingCoverage[`${medication.id}-${medication.rxcui}`]}
+                                              className="text-xs"
+                                            >
+                                              {loadingCoverage[`${medication.id}-${medication.rxcui}`] ? 'Checking...' : 'Check Coverage'}
+                                            </Button>
+                                          </div>
+                                          
+                                          {coverageInfo[`${medication.id}-${medication.rxcui}`] && (
+                                            <div className="space-y-2">
+                                              {getCoverageStatusBadge(coverageInfo[`${medication.id}-${medication.rxcui}`])}
+                                              
+                                              {coverageInfo[`${medication.id}-${medication.rxcui}`].copay && (
+                                                <div className="flex items-center text-sm text-blue-800">
+                                                  <DollarSign className="w-3 h-3 mr-1" />
+                                                  <span>Copay: ${coverageInfo[`${medication.id}-${medication.rxcui}`].copay}</span>
+                                                </div>
+                                              )}
+                                              
+                                              {coverageInfo[`${medication.id}-${medication.rxcui}`].coveragePercentage && (
+                                                <div className="text-sm text-blue-800">
+                                                  <span>Coverage: {coverageInfo[`${medication.id}-${medication.rxcui}`].coveragePercentage}%</span>
+                                                </div>
+                                              )}
+                                              
+                                              {coverageInfo[`${medication.id}-${medication.rxcui}`].formularyTier && (
+                                                <div className="text-sm text-blue-800">
+                                                  <span>Formulary Tier: {coverageInfo[`${medication.id}-${medication.rxcui}`].formularyTier}</span>
+                                                </div>
+                                              )}
+                                              
+                                              {coverageInfo[`${medication.id}-${medication.rxcui}`].restrictions && 
+                                               coverageInfo[`${medication.id}-${medication.rxcui}`].restrictions!.length > 0 && (
+                                                <div className="text-sm text-blue-800">
+                                                  <span className="font-medium">Restrictions: </span>
+                                                  {coverageInfo[`${medication.id}-${medication.rxcui}`].restrictions!.join(', ')}
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Prescription Notes */}
+                          {prescription.notes && (
+                            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                              <h6 className="font-semibold text-sm text-yellow-800 mb-2">Physician Notes</h6>
+                              <p className="text-sm text-yellow-700">{prescription.notes}</p>
+                            </div>
+                          )}
+
+                          {/* Action Buttons */}
+                          <div className="flex space-x-2 pt-2">
+                            <Button variant="outline" size="sm">
+                              Edit Prescription
+                            </Button>
+                            <Button variant="outline" size="sm">
+                              Add Medication
+                            </Button>
+                            <Button variant="outline" size="sm">
+                              Print Prescription
+                            </Button>
+                            {prescription.status === 'active' && (
+                              <Button variant="destructive" size="sm">
+                                Cancel Prescription
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
                   ))}
-                </div>
+                </Accordion>
               </TabsContent>
             </Tabs>
           </div>
         </div>
+
+        {/* EMR Entry Modal */}
+        <NewEMREntryModal
+          isOpen={isEMRModalOpen}
+          onClose={() => setIsEMRModalOpen(false)}
+          onSave={handleSaveEMREntry}
+          patientId={patient.id}
+        />
+
+        {/* New Prescription Modal */}
+        <NewPrescriptionModal
+          isOpen={isPrescriptionModalOpen}
+          onClose={() => setIsPrescriptionModalOpen(false)}
+          onSave={handleSavePrescription}
+          patientId={patient.id}
+        />
       </DialogContent>
     </Dialog>
   )

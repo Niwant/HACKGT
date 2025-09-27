@@ -1,12 +1,13 @@
 'use client'
 
 import React, { createContext, useContext, useReducer, ReactNode } from 'react'
-import { User, Patient, Prescription, EMR, Notification, DrugResearch, RecoveryMilestone, RehabChecklist } from '@/types'
+import { User, Patient, Prescription, EMR, Notification, DrugResearch, RecoveryMilestone, RehabChecklist, Medication } from '@/types'
 
 interface AppState {
   user: User | null
   patients: Patient[]
   prescriptions: Prescription[]
+  medications: Medication[]
   emrRecords: EMR[]
   notifications: Notification[]
   drugResearch: DrugResearch[]
@@ -24,6 +25,9 @@ type AppAction =
   | { type: 'SET_PRESCRIPTIONS'; payload: Prescription[] }
   | { type: 'ADD_PRESCRIPTION'; payload: Prescription }
   | { type: 'UPDATE_PRESCRIPTION'; payload: Prescription }
+  | { type: 'SET_MEDICATIONS'; payload: Medication[] }
+  | { type: 'ADD_MEDICATION'; payload: Medication }
+  | { type: 'UPDATE_MEDICATION'; payload: Medication }
   | { type: 'SET_EMR_RECORDS'; payload: EMR[] }
   | { type: 'ADD_EMR_RECORD'; payload: EMR }
   | { type: 'SET_NOTIFICATIONS'; payload: Notification[] }
@@ -40,6 +44,7 @@ const initialState: AppState = {
   user: null,
   patients: [],
   prescriptions: [],
+  medications: [],
   emrRecords: [],
   notifications: [],
   drugResearch: [],
@@ -70,6 +75,15 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         prescriptions: state.prescriptions.map(p => p.id === action.payload.id ? action.payload : p)
+      }
+    case 'SET_MEDICATIONS':
+      return { ...state, medications: action.payload }
+    case 'ADD_MEDICATION':
+      return { ...state, medications: [...state.medications, action.payload] }
+    case 'UPDATE_MEDICATION':
+      return {
+        ...state,
+        medications: state.medications.map(m => m.id === action.payload.id ? action.payload : m)
       }
     case 'SET_EMR_RECORDS':
       return { ...state, emrRecords: action.payload }

@@ -18,6 +18,9 @@ import {
   Activity
 } from 'lucide-react'
 import { Medication, RecoveryMilestone, RehabChecklist } from '@/types'
+import { RecoveryCompanion } from '@/components/patient/RecoveryCompanion'
+import { MedicationTracker } from '@/components/patient/MedicationTracker'
+import { AppointmentScheduler } from '@/components/patient/AppointmentScheduler'
 import { format } from 'date-fns'
 
 export function PatientDashboard() {
@@ -122,9 +125,9 @@ export function PatientDashboard() {
       }
     ]
 
-    dispatch({ type: 'SET_PRESCRIPTIONS', payload: mockMedications })
     dispatch({ type: 'SET_RECOVERY_MILESTONES', payload: mockMilestones })
     dispatch({ type: 'SET_REHAB_CHECKLIST', payload: mockChecklist })
+    dispatch({ type: 'SET_MEDICATIONS', payload: mockMedications })
   }, [dispatch])
 
   const completedMilestones = state.recoveryMilestones.filter(m => m.isCompleted).length
@@ -137,10 +140,48 @@ export function PatientDashboard() {
       id: '1',
       date: new Date('2024-02-15'),
       time: '10:00 AM',
-      type: 'Follow-up',
-      physician: 'Dr. Smith'
+      type: 'in-person' as const,
+      physician: 'Dr. Smith',
+      specialty: 'Cardiology',
+      location: '123 Main St, City, State',
+      status: 'scheduled' as const,
+      notes: 'Follow-up appointment',
+      duration: 30
     }
   ]
+
+  const handleUpdateMilestone = (milestone: RecoveryMilestone) => {
+    dispatch({ type: 'UPDATE_MILESTONE', payload: milestone })
+  }
+
+  const handleUpdateChecklist = (item: RehabChecklist) => {
+    dispatch({ type: 'UPDATE_CHECKLIST_ITEM', payload: item })
+  }
+
+  const handleMedicationTaken = (medicationId: string, time: Date) => {
+    console.log('Medication taken:', medicationId, time)
+    // In a real app, this would save to the backend
+  }
+
+  const handleMedicationSkipped = (medicationId: string, reason: string) => {
+    console.log('Medication skipped:', medicationId, reason)
+    // In a real app, this would save to the backend
+  }
+
+  const handleScheduleAppointment = (appointment: any) => {
+    console.log('Scheduling appointment:', appointment)
+    // In a real app, this would save to the backend
+  }
+
+  const handleUpdateAppointment = (id: string, appointment: any) => {
+    console.log('Updating appointment:', id, appointment)
+    // In a real app, this would save to the backend
+  }
+
+  const handleCancelAppointment = (id: string) => {
+    console.log('Cancelling appointment:', id)
+    // In a real app, this would save to the backend
+  }
 
   return (
     <div className="space-y-6">
@@ -228,200 +269,121 @@ export function PatientDashboard() {
       <Tabs defaultValue="medications" className="space-y-4">
         <TabsList>
           <TabsTrigger value="medications">Medications</TabsTrigger>
-          <TabsTrigger value="recovery">Recovery Timeline</TabsTrigger>
-          <TabsTrigger value="checklist">Daily Checklist</TabsTrigger>
+          <TabsTrigger value="recovery">Recovery Companion</TabsTrigger>
           <TabsTrigger value="appointments">Appointments</TabsTrigger>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
         </TabsList>
 
         <TabsContent value="medications" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Current Medications</CardTitle>
-              <CardDescription>
-                Your prescribed medications with detailed information
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {state.prescriptions.map((medication) => (
-                  <div
-                    key={medication.id}
-                    className="p-4 border rounded-lg hover:bg-gray-50"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2">
-                          <h3 className="font-medium text-lg">{medication.name}</h3>
-                          <Badge variant="outline">{medication.dosage}</Badge>
-                          {medication.insuranceCovered && (
-                            <Badge variant="secondary">Covered</Badge>
-                          )}
-                        </div>
-                        <p className="text-gray-600 mt-1">
-                          <strong>Generic:</strong> {medication.genericName}
-                        </p>
-                        <p className="text-gray-600">
-                          <strong>Instructions:</strong> {medication.instructions}
-                        </p>
-                        <p className="text-gray-600">
-                          <strong>Frequency:</strong> {medication.frequency}
-                        </p>
-                        <div className="mt-2">
-                          <p className="text-sm font-medium text-gray-700">Side Effects:</p>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {medication.sideEffects.map((effect) => (
-                              <Badge key={effect} variant="outline" className="text-xs">
-                                {effect}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="mt-2">
-                          <p className="text-sm font-medium text-gray-700">Cost: ${medication.cost}/month</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <MedicationTracker
+            medications={state.medications}
+            onMedicationTaken={handleMedicationTaken}
+            onMedicationSkipped={handleMedicationSkipped}
+          />
         </TabsContent>
 
         <TabsContent value="recovery" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recovery Timeline</CardTitle>
-              <CardDescription>
-                Track your health milestones and progress
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {state.recoveryMilestones.map((milestone) => (
-                  <div
-                    key={milestone.id}
-                    className={`p-4 border rounded-lg ${
-                      milestone.isCompleted ? 'bg-green-50 border-green-200' : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2">
-                          <h3 className="font-medium">{milestone.title}</h3>
-                          {milestone.isCompleted ? (
-                            <CheckCircle className="w-5 h-5 text-green-600" />
-                          ) : (
-                            <Clock className="w-5 h-5 text-gray-400" />
-                          )}
-                          <Badge variant="outline">{milestone.category}</Badge>
-                        </div>
-                        <p className="text-gray-600 mt-1">{milestone.description}</p>
-                        <p className="text-sm text-gray-500 mt-2">
-                          Target: {format(milestone.targetDate, 'MMM dd, yyyy')}
-                          {milestone.completedDate && (
-                            <span className="ml-2 text-green-600">
-                              • Completed: {format(milestone.completedDate, 'MMM dd, yyyy')}
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <RecoveryCompanion
+            milestones={state.recoveryMilestones}
+            checklist={state.rehabChecklist}
+            onUpdateMilestone={handleUpdateMilestone}
+            onUpdateChecklist={handleUpdateChecklist}
+          />
         </TabsContent>
 
-        <TabsContent value="checklist" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Daily Health Checklist</CardTitle>
-              <CardDescription>
-                Complete these tasks to stay on track with your health plan
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {state.rehabChecklist.map((item) => (
-                  <div
-                    key={item.id}
-                    className={`p-4 border rounded-lg ${
-                      item.isCompleted ? 'bg-green-50 border-green-200' : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-3">
-                        <div className="mt-1">
-                          {item.isCompleted ? (
-                            <CheckCircle className="w-5 h-5 text-green-600" />
-                          ) : (
-                            <div className="w-5 h-5 border-2 border-gray-300 rounded-full" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-medium">{item.title}</h3>
-                          <p className="text-gray-600 text-sm">{item.description}</p>
-                          <Badge variant="outline" className="mt-1 text-xs">
-                            {item.category}
-                          </Badge>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          const updatedItem = {
-                            ...item,
-                            isCompleted: !item.isCompleted,
-                            completedDate: !item.isCompleted ? new Date() : undefined
-                          }
-                          dispatch({ type: 'UPDATE_CHECKLIST_ITEM', payload: updatedItem })
-                        }}
-                      >
-                        {item.isCompleted ? 'Undo' : 'Complete'}
-                      </Button>
-                    </div>
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Health Summary Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Heart className="w-5 h-5" />
+                  <span>Health Summary</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Active Medications</span>
+                    <span className="font-semibold">{state.medications.length}</span>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Recovery Progress</span>
+                    <span className="font-semibold">
+                      {totalMilestones > 0 ? Math.round((completedMilestones / totalMilestones) * 100) : 0}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Daily Tasks</span>
+                    <span className="font-semibold">
+                      {completedChecklist}/{totalChecklist}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Quick Actions Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Activity className="w-5 h-5" />
+                  <span>Quick Actions</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Button variant="outline" className="w-full justify-start">
+                    <Pill className="w-4 h-4 mr-2" />
+                    Log Medication
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Schedule Appointment
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start">
+                    <Heart className="w-4 h-4 mr-2" />
+                    Log Symptoms
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recent Activity Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Clock className="w-5 h-5" />
+                  <span>Recent Activity</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2 text-sm">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span>Completed daily checklist</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-sm">
+                    <Pill className="w-4 h-4 text-blue-600" />
+                    <span>Took morning medication</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-sm">
+                    <Calendar className="w-4 h-4 text-purple-600" />
+                    <span>Appointment scheduled</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="appointments" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Upcoming Appointments</CardTitle>
-              <CardDescription>
-                Your scheduled visits and check-ups
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {upcomingAppointments.map((appointment) => (
-                  <div
-                    key={appointment.id}
-                    className="p-4 border rounded-lg hover:bg-gray-50"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-medium">{appointment.type}</h3>
-                        <p className="text-gray-600">with {appointment.physician}</p>
-                        <p className="text-sm text-gray-500">
-                          {format(appointment.date, 'EEEE, MMMM dd, yyyy')} at {appointment.time}
-                        </p>
-                      </div>
-                      <Button variant="outline" size="sm">
-                        View Details
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <AppointmentScheduler
+            appointments={upcomingAppointments}
+            onScheduleAppointment={handleScheduleAppointment}
+            onUpdateAppointment={handleUpdateAppointment}
+            onCancelAppointment={handleCancelAppointment}
+          />
         </TabsContent>
       </Tabs>
     </div>

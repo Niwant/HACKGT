@@ -52,22 +52,34 @@ export interface Prescription {
   id: string
   patientId: string
   physicianId: string
-  medicationId: string
   diagnosis: string
   icdCode: string
-  dosage: string
-  frequency: string
-  instructions: string
   startDate: Date
   endDate?: Date
-  refills: number
   status: 'active' | 'completed' | 'cancelled'
   createdAt: Date
+  medications: PrescriptionMedication[]
   safetyChecks: {
     allergies: boolean
     interactions: boolean
     renalAdjustment: boolean
   }
+  notes?: string
+}
+
+export interface PrescriptionMedication {
+  id: string
+  medicationId: string
+  name: string
+  genericName: string
+  dosage: string
+  frequency: string
+  instructions: string
+  refills: number
+  duration: string
+  cost: number
+  insuranceCovered: boolean
+  rxcui?: string
 }
 
 export interface EMR {
@@ -125,4 +137,18 @@ export interface RehabChecklist {
   isCompleted: boolean
   completedDate?: Date
   category: 'diet' | 'exercise' | 'medication' | 'monitoring'
+}
+
+export interface CoverageInfo {
+  patientId: string
+  rxcui: string
+  coverageStatus: 'covered' | 'not_covered' | 'prior_auth_required' | 'unknown'
+  copay?: number
+  deductible?: number
+  coveragePercentage?: number
+  priorAuthRequired?: boolean
+  formularyTier?: number
+  restrictions?: string[]
+  effectiveDate?: Date
+  expirationDate?: Date
 }
