@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -43,127 +43,37 @@ export function PatientProfileModal({ patient, isOpen, onClose }: PatientProfile
   const [coverageInfo, setCoverageInfo] = useState<Record<string, CoverageInfo>>({})
   const [loadingCoverage, setLoadingCoverage] = useState<Record<string, boolean>>({})
 
-  // Mock prescriptions data - converted to state so it can be updated
-  const [mockPrescriptions, setMockPrescriptions] = useState<Prescription[]>([
-    {
-      id: '1',
-      patientId: patient?.id || '',
-      physicianId: 'physician-1',
-      diagnosis: 'Type 2 Diabetes with Hypertension',
-      icdCode: 'E11.9, I10',
-      startDate: new Date('2024-01-01'),
-      status: 'active',
-      createdAt: new Date('2024-01-01'),
-      medications: [
-        {
-          id: 'med-1',
-          medicationId: 'metformin-500',
-          name: 'Metformin',
-          genericName: 'Metformin HCl',
-          dosage: '500mg',
-          frequency: 'Twice daily',
-          instructions: 'Take with meals to reduce stomach upset',
-          refills: 3,
-          duration: '90 days',
-          cost: 15.99,
-          insuranceCovered: true,
-          rxcui: '1551300' // Metformin RxCUI
-        },
-        {
-          id: 'med-2',
-          medicationId: 'lisinopril-10',
-          name: 'Lisinopril',
-          genericName: 'Lisinopril',
-          dosage: '10mg',
-          frequency: 'Once daily',
-          instructions: 'Take at the same time each day',
-          refills: 3,
-          duration: '90 days',
-          cost: 8.50,
-          insuranceCovered: true,
-          rxcui: '314076' // Lisinopril RxCUI
-        }
-      ],
-      safetyChecks: {
-        allergies: true,
-        interactions: true,
-        renalAdjustment: true
-      },
-      notes: 'Patient responding well to combination therapy. Monitor blood pressure and blood sugar levels.'
-    },
-    {
-      id: '2',
-      patientId: patient?.id || '',
-      physicianId: 'physician-1',
-      diagnosis: 'Allergic Rhinitis',
-      icdCode: 'J30.9',
-      startDate: new Date('2024-01-15'),
-      status: 'active',
-      createdAt: new Date('2024-01-15'),
-      medications: [
-        {
-          id: 'med-3',
-          medicationId: 'loratadine-10',
-          name: 'Loratadine',
-          genericName: 'Loratadine',
-          dosage: '10mg',
-          frequency: 'Once daily',
-          instructions: 'Take with or without food',
-          refills: 2,
-          duration: '60 days',
-          cost: 12.99,
-          insuranceCovered: true,
-          rxcui: '313406' // Loratadine RxCUI
-        }
-      ],
-      safetyChecks: {
-        allergies: true,
-        interactions: false,
-        renalAdjustment: false
-      },
-      notes: 'Seasonal allergy management. Start 2 weeks before allergy season.'
+  // Load prescriptions from centralized mock data
+  const [mockPrescriptions, setMockPrescriptions] = useState<Prescription[]>([])
+  
+  // Load EMR data from centralized mock data
+  const [mockEMR, setMockEMR] = useState<EMR[]>([])
+  
+  useEffect(() => {
+    const loadPrescriptions = async () => {
+      const { fetchPrescriptions } = await import('@/lib/mockData')
+      const prescriptions = await fetchPrescriptions(patient?.id || '1')
+      setMockPrescriptions(prescriptions)
     }
-  ])
+    
+    if (patient?.id) {
+      loadPrescriptions()
+    }
+  }, [patient?.id])
+
+  useEffect(() => {
+    const loadEMRData = async () => {
+      const { fetchEMRRecords } = await import('@/lib/mockData')
+      const emrData = await fetchEMRRecords(patient?.id || '1')
+      setMockEMR(emrData)
+    }
+    
+    if (patient?.id) {
+      loadEMRData()
+    }
+  }, [patient?.id])
 
   if (!patient) return null
-
-  // Mock EMR data - in real app, this would come from API
-  const mockEMR: EMR[] = [
-    {
-      id: '1',
-      patientId: patient.id,
-      physicianId: 'physician-1',
-      type: 'vitals',
-      title: 'Blood Pressure Reading',
-      content: 'Blood pressure measured during routine check-up',
-      value: '120/80',
-      unit: 'mmHg',
-      date: new Date('2024-01-15'),
-      isUrgent: false
-    },
-    {
-      id: '2',
-      patientId: patient.id,
-      physicianId: 'physician-1',
-      type: 'diagnosis',
-      title: 'Type 2 Diabetes',
-      content: 'Patient diagnosed with Type 2 Diabetes based on HbA1c levels',
-      date: new Date('2024-01-10'),
-      isUrgent: false
-    },
-    {
-      id: '3',
-      patientId: patient.id,
-      physicianId: 'physician-1',
-      type: 'lab',
-      title: 'HbA1c Test Results',
-      content: 'Latest HbA1c test results',
-      value: '7.1',
-      unit: '%',
-      date: new Date('2024-01-12'),
-      isUrgent: false
-    }
-  ]
 
 
   const getSeverityColor = (severity: string) => {
@@ -421,8 +331,15 @@ export function PatientProfileModal({ patient, isOpen, onClose }: PatientProfile
                   </Button>
                 </div>
                 
-                <Accordion type="multiple" className="w-full">
-                  {mockEMR.map((record) => (
+                {mockEMR.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                    <p>No EMR records found</p>
+                    <p className="text-sm">EMR records will appear here when available</p>
+                  </div>
+                ) : (
+                  <Accordion type="multiple" className="w-full">
+                    {mockEMR.map((record) => (
                     <AccordionItem key={record.id} value={record.id} className={record.isUrgent ? 'border-red-200 bg-red-50' : ''}>
                       <AccordionTrigger className="hover:no-underline">
                         <div className="flex items-center space-x-4 w-full">
@@ -518,7 +435,8 @@ export function PatientProfileModal({ patient, isOpen, onClose }: PatientProfile
                       </AccordionContent>
                     </AccordionItem>
                   ))}
-                </Accordion>
+                  </Accordion>
+                )}
               </TabsContent>
 
               {/* Prescriptions Tab */}

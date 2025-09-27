@@ -295,7 +295,7 @@ app.get('/', (req, res) => {
       dbTest: '/api/db-test',
       coverage: '/api/coverage?patientId=...&rxcui=...',
       cost: '/api/cost?patientId=...&rxcui=...&daysSupply=30&coverageLevel=Initial%20Coverage&channel=RETAIL&preferred=1',
-      prescriptionAnalysis: 'POST /api/prescription-analysis'
+      prescriptionAnalysis: '/api/evidence/digest-rxcui'
     }
   });
 });

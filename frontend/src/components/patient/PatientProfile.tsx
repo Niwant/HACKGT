@@ -67,55 +67,23 @@ export function PatientProfile() {
   const [isEditing, setIsEditing] = useState(false)
   const [patientData, setPatientData] = useState<PatientData | null>(null)
 
-  // Mock data - in a real app, this would come from an API
+  // Load mock data from centralized source
   useEffect(() => {
-    const mockData: PatientData = {
-      id: 'patient-1',
-      firstName: 'John',
-      lastName: 'Doe',
-      dateOfBirth: new Date('1985-06-15'),
-      gender: 'male',
-      phone: '+1 (555) 123-4567',
-      email: user?.emailAddresses[0]?.emailAddress || 'john.doe@example.com',
-      address: '123 Main Street, Apt 4B, New York, NY 10001',
-      emergencyContact: {
-        name: 'Jane Doe',
-        phone: '+1 (555) 987-6543',
-        relationship: 'Spouse'
-      },
-      medicalHistory: [
-        'Type 2 Diabetes (2020)',
-        'Hypertension (2019)',
-        'High Cholesterol (2021)'
-      ],
-      allergies: [
-        'Penicillin',
-        'Shellfish',
-        'Latex'
-      ],
-      currentConditions: [
-        'Type 2 Diabetes',
-        'Hypertension',
-        'High Cholesterol'
-      ],
-      insurance: {
-        provider: 'Blue Cross Blue Shield',
-        policyNumber: 'BC123456789',
-        groupNumber: 'GRP001',
-        effectiveDate: new Date('2024-01-01'),
-        expirationDate: new Date('2024-12-31'),
-        copay: 25,
-        deductible: 1000,
-        coverageType: 'primary'
-      },
-      physician: {
-        name: 'Dr. Sarah Smith',
-        specialty: 'Internal Medicine',
-        phone: '+1 (555) 234-5678',
-        email: 'sarah.smith@hospital.com'
+    const loadPatientData = async () => {
+      const { fetchPatientData } = await import('@/lib/mockData')
+      const data = await fetchPatientData('1')
+      
+      if (data) {
+        // Update email with user's email if available
+        const patientData: PatientData = {
+          ...data,
+          email: user?.emailAddresses[0]?.emailAddress || data.email
+        }
+        setPatientData(patientData)
       }
     }
-    setPatientData(mockData)
+    
+    loadPatientData()
   }, [user])
 
   const handleSave = (updatedData: Partial<PatientData>) => {

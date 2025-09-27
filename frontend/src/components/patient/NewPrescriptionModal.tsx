@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Plus, X, CheckCircle, AlertTriangle } from 'lucide-react'
 import { Prescription, PrescriptionMedication, CoverageInfo } from '@/types'
-import { fetchCoverageInfo } from '@/lib/api'
+import { fetchCoverageInfo, fetchEvidence } from '@/lib/api'
 
 interface NewPrescriptionModalProps {
   isOpen: boolean
@@ -57,17 +57,22 @@ export function NewPrescriptionModal({ isOpen, onClose, onSave, patientId }: New
   const [coverageLoading, setCoverageLoading] = useState(false)
   const [costInfo, setCostInfo] = useState<any>(null)
   const [costLoading, setCostLoading] = useState(false)
+  const [evidenceInfo, setEvidenceInfo] = useState<any>(null)
+  const [evidenceLoading, setEvidenceLoading] = useState(false)
 
   // Cost lookup function
-  const fetchCost = async (rxcui: string, daysSupply: number = 30) => {
+  const fetchCost = async (rxcui: string, daysSupply: number = 2) => {
     console.log('fetchCost called with:', { rxcui, daysSupply })
-    const hardcodedPatientId = '015786ad-e05e-2812-b3e8-11713aa05988'
     
     setCostLoading(true)
     setCostInfo(null)
     
     try {
-      const url = `http://localhost:8000/api/cost?patientId=${encodeURIComponent(hardcodedPatientId)}&rxcui=${encodeURIComponent(rxcui)}&daysSupply=${daysSupply}&coverageLevel=${encodeURIComponent('Initial Coverage')}&channel=RETAIL&preferred=1`
+      // Import mock data for cost information
+      const { costData } = await import('@/lib/mockData')
+      const hardcodedPatientId = costData.hardcodedPatientId
+      
+      const url = `http://localhost:8000/api/cost?patientId=${encodeURIComponent(hardcodedPatientId)}&rxcui=${encodeURIComponent(rxcui)}&daysSupply=1&coverageLevel=1&channel=RETAIL&preferred=1`
       console.log('Making cost API call to:', url)
       
       const response = await fetch(url)
@@ -87,20 +92,43 @@ export function NewPrescriptionModal({ isOpen, onClose, onSave, patientId }: New
       } else if (!data.found) {
         console.log('Using mock cost data because found is false')
         // Use mock data when found is false
-        const mockData = {
-          found: true,
-          tier: "3",
-          estimatedOutOfPocket: "6.72",
-          specialtyTier: false,
-          deductibleApplies: true
-        }
-        setCostInfo(mockData)
-        setNewMedication(prev => ({ ...prev, cost: parseFloat(mockData.estimatedOutOfPocket) }))
+        setCostInfo(costData.mockCost)
+        setNewMedication(prev => ({ ...prev, cost: parseFloat(costData.mockCost.estimatedOutOfPocket) }))
       }
     } catch (error) {
       console.error('Error fetching cost:', error)
+      // Fallback to mock data on error
+      const { costData } = await import('@/lib/mockData')
+      setCostInfo(costData.mockCost)
+      setNewMedication(prev => ({ ...prev, cost: parseFloat(costData.mockCost.estimatedOutOfPocket) }))
     } finally {
       setCostLoading(false)
+    }
+  }
+
+  // Evidence digest lookup function
+  const fetchEvidenceData = async (rxcui: string) => {
+    console.log('fetchEvidence called with:', { rxcui })
+    const { costData } = await import('@/lib/mockData')
+    const hardcodedPatientId = costData.hardcodedPatientId
+    
+    setEvidenceLoading(true)
+    setEvidenceInfo(null)
+    
+    try {
+      console.log('Making evidence API call with POST method')
+      const result = await fetchEvidence(hardcodedPatientId, rxcui)
+      
+      if (result.success && result.data) {
+        console.log('Evidence API response:', result.data)
+        setEvidenceInfo(result.data)
+      } else {
+        console.error('Evidence API error:', result.error)
+      }
+    } catch (error) {
+      console.error('Error fetching evidence:', error)
+    } finally {
+      setEvidenceLoading(false)
     }
   }
 
@@ -153,11 +181,13 @@ export function NewPrescriptionModal({ isOpen, onClose, onSave, patientId }: New
         setRxcuiLookup({ isLoading: false, rxcui, error: '' })
         setNewMedication(prev => ({ ...prev, genericName: rxcui }))
         
-        // Automatically fetch coverage and cost information
+        // Automatically fetch coverage, cost, and evidence information
         console.log('Calling fetchCoverage with RxCUI:', rxcui)
         fetchCoverage(rxcui)
         console.log('Calling fetchCost with RxCUI:', rxcui)
         fetchCost(rxcui, 30) // Default 30 days supply
+        console.log('Calling fetchEvidenceData with RxCUI:', rxcui)
+        fetchEvidenceData(rxcui)
       } else {
         console.log('No RxCUI found in response:', data)
         setRxcuiLookup({ isLoading: false, rxcui: '', error: 'No RxCUI found for this medication' })
@@ -251,6 +281,7 @@ export function NewPrescriptionModal({ isOpen, onClose, onSave, patientId }: New
     setRxcuiLookup({ isLoading: false, rxcui: '', error: '' })
     setCoverageInfo(null)
     setCostInfo(null)
+    setEvidenceInfo(null)
   }
 
   const addMedication = () => {
@@ -275,6 +306,7 @@ export function NewPrescriptionModal({ isOpen, onClose, onSave, patientId }: New
       setRxcuiLookup({ isLoading: false, rxcui: '', error: '' })
       setCoverageInfo(null)
       setCostInfo(null)
+      setEvidenceInfo(null)
     }
   }
 
@@ -441,6 +473,71 @@ export function NewPrescriptionModal({ isOpen, onClose, onSave, patientId }: New
                     </div>
                   </div>
                 </div>
+                
+                {/* Evidence Flags */}
+                {(evidenceLoading || evidenceInfo) && (
+                  <div className="space-y-2">
+                    <Label>Evidence Flags</Label>
+                    <div className="space-y-2">
+                      {evidenceLoading && (
+                        <p className="text-xs text-blue-600">🔍 Checking evidence...</p>
+                      )}
+                      {evidenceInfo?.result?.flags && (
+                        <div className="flex flex-wrap gap-2">
+                          {/* High Priority Flags */}
+                          {evidenceInfo.result.flags.high && evidenceInfo.result.flags.high.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {evidenceInfo.result.flags.high.map((flag: any, index: number) => (
+                                <Badge key={`high-${index}`} variant="destructive" className="text-xs">
+                                  🔴 High: {flag.type}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {/* Medium Priority Flags */}
+                          {evidenceInfo.result.flags.medium && evidenceInfo.result.flags.medium.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {evidenceInfo.result.flags.medium.map((flag: any, index: number) => (
+                                <Badge key={`medium-${index}`} variant="secondary" className="bg-yellow-100 text-yellow-800 text-xs">
+                                  🟡 Medium: {flag.type}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {/* Info Flags */}
+                          {evidenceInfo.result.flags.info && evidenceInfo.result.flags.info.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {evidenceInfo.result.flags.info.map((flag: any, index: number) => (
+                                <Badge key={`info-${index}`} variant="outline" className="text-xs">
+                                  ℹ️ Info: {flag.type}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {/* Show message if no flags */}
+                          {(!evidenceInfo.result.flags.high || evidenceInfo.result.flags.high.length === 0) &&
+                           (!evidenceInfo.result.flags.medium || evidenceInfo.result.flags.medium.length === 0) &&
+                           (!evidenceInfo.result.flags.info || evidenceInfo.result.flags.info.length === 0) && (
+                            <Badge variant="outline" className="text-xs text-green-600">
+                              ✅ No flags detected
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* HCP Summary */}
+                      {evidenceInfo?.result?.hcp_summary && (
+                        <div className="p-2 bg-gray-50 border rounded text-xs">
+                          <p className="font-medium text-gray-700 mb-1">HCP Summary:</p>
+                          <p className="text-gray-600">{evidenceInfo.result.hcp_summary}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
                 <div className="space-y-2 mb-4">
                   <Label>Instructions</Label>
                   <Textarea

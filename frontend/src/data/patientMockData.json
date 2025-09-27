@@ -1,0 +1,351 @@
+{
+  "patientProfile": {
+    "id": "1",
+    "firstName": "John",
+    "lastName": "Doe",
+    "dateOfBirth": "1985-06-15",
+    "gender": "male",
+    "phone": "+1 (555) 123-4567",
+    "email": "john.doe@example.com",
+    "address": "123 Main Street, Apt 4B, New York, NY 10001",
+    "emergencyContact": {
+      "name": "Jane Doe",
+      "phone": "+1 (555) 987-6543",
+      "relationship": "Spouse"
+    },
+    "medicalHistory": [
+      "Type 2 Diabetes (2020)",
+      "Hypertension (2019)",
+      "High Cholesterol (2021)"
+    ],
+    "allergies": [
+      "Penicillin",
+      "Shellfish",
+      "Latex"
+    ],
+    "currentConditions": [
+      "Type 2 Diabetes",
+      "Hypertension",
+      "High Cholesterol"
+    ],
+    "insurance": {
+      "provider": "Blue Cross Blue Shield",
+      "policyNumber": "BC123456789",
+      "groupNumber": "GRP001",
+      "effectiveDate": "2024-01-01",
+      "expirationDate": "2024-12-31",
+      "copay": 25,
+      "deductible": 1000,
+      "coverageType": "primary"
+    },
+    "physician": {
+      "name": "Dr. Sarah Smith",
+      "specialty": "Internal Medicine",
+      "phone": "+1 (555) 234-5678",
+      "email": "sarah.smith@hospital.com"
+    }
+  },
+  "prescriptions": [
+    {
+      "id": "1",
+      "patientId": "1",
+      "physicianId": "physician-1",
+      "diagnosis": "Type 2 Diabetes with Hypertension",
+      "icdCode": "E11.9, I10",
+      "startDate": "2024-01-01",
+      "status": "active",
+      "createdAt": "2024-01-01",
+      "medications": [
+        {
+          "id": "med-1",
+          "medicationId": "metformin-500",
+          "name": "Metformin",
+          "genericName": "Metformin HCl",
+          "dosage": "500mg",
+          "frequency": "Twice daily",
+          "instructions": "Take with meals to reduce stomach upset",
+          "refills": 3,
+          "duration": "90 days",
+          "cost": 15.99,
+          "insuranceCovered": true,
+          "rxcui": "1551300"
+        },
+        {
+          "id": "med-2",
+          "medicationId": "lisinopril-10",
+          "name": "Lisinopril",
+          "genericName": "Lisinopril",
+          "dosage": "10mg",
+          "frequency": "Once daily",
+          "instructions": "Take at the same time each day",
+          "refills": 3,
+          "duration": "90 days",
+          "cost": 8.50,
+          "insuranceCovered": true,
+          "rxcui": "314076"
+        }
+      ],
+      "safetyChecks": {
+        "allergies": true,
+        "interactions": true,
+        "renalAdjustment": true
+      },
+      "notes": "Patient responding well to combination therapy. Monitor blood pressure and blood sugar levels."
+    },
+    {
+      "id": "2",
+      "patientId": "1",
+      "physicianId": "physician-1",
+      "diagnosis": "Allergic Rhinitis",
+      "icdCode": "J30.9",
+      "startDate": "2024-01-15",
+      "status": "active",
+      "createdAt": "2024-01-15",
+      "medications": [
+        {
+          "id": "med-3",
+          "medicationId": "loratadine-10",
+          "name": "Loratadine",
+          "genericName": "Loratadine",
+          "dosage": "10mg",
+          "frequency": "Once daily",
+          "instructions": "Take with or without food",
+          "refills": 2,
+          "duration": "60 days",
+          "cost": 12.99,
+          "insuranceCovered": true,
+          "rxcui": "313406"
+        }
+      ],
+      "safetyChecks": {
+        "allergies": true,
+        "interactions": false,
+        "renalAdjustment": false
+      },
+      "notes": "Seasonal allergy management. Start 2 weeks before allergy season."
+    }
+  ],
+  "medications": [
+    {
+      "id": "1",
+      "name": "Metformin",
+      "genericName": "Metformin HCl",
+      "dosage": "500mg",
+      "frequency": "Twice daily",
+      "startDate": "2024-01-01",
+      "instructions": "Take with meals to reduce stomach upset",
+      "sideEffects": ["Nausea", "Diarrhea", "Stomach upset"],
+      "cost": 15.99,
+      "insuranceCovered": true,
+      "drugInteractions": ["Contrast dye", "Alcohol"]
+    },
+    {
+      "id": "2",
+      "name": "Lisinopril",
+      "genericName": "Lisinopril",
+      "dosage": "10mg",
+      "frequency": "Once daily",
+      "startDate": "2024-01-15",
+      "instructions": "Take at the same time each day",
+      "sideEffects": ["Dry cough", "Dizziness", "Fatigue"],
+      "cost": 8.50,
+      "insuranceCovered": true,
+      "drugInteractions": ["Potassium supplements", "NSAIDs"]
+    }
+  ],
+  "emrRecords": [
+    {
+      "id": "1",
+      "patientId": "1",
+      "physicianId": "physician-1",
+      "type": "vitals",
+      "title": "Blood Pressure Reading",
+      "content": "Blood pressure measured during routine check-up",
+      "value": "120/80",
+      "unit": "mmHg",
+      "date": "2024-01-15",
+      "isUrgent": false
+    },
+    {
+      "id": "2",
+      "patientId": "1",
+      "physicianId": "physician-1",
+      "type": "diagnosis",
+      "title": "Type 2 Diabetes",
+      "content": "Patient diagnosed with Type 2 Diabetes based on HbA1c levels",
+      "date": "2024-01-10",
+      "isUrgent": false
+    },
+    {
+      "id": "3",
+      "patientId": "1",
+      "physicianId": "physician-1",
+      "type": "lab",
+      "title": "HbA1c Test Results",
+      "content": "Latest HbA1c test results",
+      "value": "7.1",
+      "unit": "%",
+      "date": "2024-01-12",
+      "isUrgent": false
+    }
+  ],
+  "recoveryMilestones": [
+    {
+      "id": "1",
+      "patientId": "1",
+      "title": "First HbA1c Check",
+      "description": "Complete your first HbA1c test to monitor blood sugar control",
+      "targetDate": "2024-02-15",
+      "isCompleted": false,
+      "category": "lab"
+    },
+    {
+      "id": "2",
+      "patientId": "1",
+      "title": "30 Days Medication Adherence",
+      "description": "Take all medications as prescribed for 30 consecutive days",
+      "targetDate": "2024-02-01",
+      "isCompleted": true,
+      "completedDate": "2024-01-31",
+      "category": "medication"
+    },
+    {
+      "id": "3",
+      "patientId": "1",
+      "title": "Start Exercise Routine",
+      "description": "Begin 30 minutes of daily walking",
+      "targetDate": "2024-02-10",
+      "isCompleted": false,
+      "category": "exercise"
+    }
+  ],
+  "rehabChecklist": [
+    {
+      "id": "1",
+      "patientId": "1",
+      "title": "Take morning medication",
+      "description": "Metformin 500mg with breakfast",
+      "isCompleted": true,
+      "completedDate": "2024-01-25",
+      "category": "medication"
+    },
+    {
+      "id": "2",
+      "patientId": "1",
+      "title": "Check blood pressure",
+      "description": "Record morning blood pressure reading",
+      "isCompleted": false,
+      "category": "monitoring"
+    },
+    {
+      "id": "3",
+      "patientId": "1",
+      "title": "Avoid grapefruit juice",
+      "description": "Skip grapefruit juice with Lisinopril",
+      "isCompleted": true,
+      "completedDate": "2024-01-25",
+      "category": "diet"
+    },
+    {
+      "id": "4",
+      "patientId": "1",
+      "title": "30-minute walk",
+      "description": "Complete daily walking exercise",
+      "isCompleted": false,
+      "category": "exercise"
+    }
+  ],
+  "appointments": [
+    {
+      "id": "1",
+      "date": "2024-02-15",
+      "time": "10:00 AM",
+      "type": "in-person",
+      "physician": "Dr. Smith",
+      "specialty": "Cardiology",
+      "location": "123 Main St, City, State",
+      "status": "scheduled",
+      "notes": "Follow-up appointment",
+      "duration": 30
+    }
+  ],
+  "educationContent": [
+    {
+      "title": "Understanding Your Condition",
+      "content": "Learn about your health condition, its causes, and how to manage it effectively.",
+      "articles": [
+        "What is Type 2 Diabetes?",
+        "Understanding Blood Sugar Levels",
+        "The Role of Insulin in Your Body",
+        "Long-term Complications and Prevention"
+      ]
+    },
+    {
+      "title": "Medication Management",
+      "content": "Everything you need to know about your medications and how to take them safely.",
+      "articles": [
+        "How Metformin Works",
+        "Managing Side Effects",
+        "Drug Interactions to Avoid",
+        "When to Contact Your Doctor"
+      ]
+    },
+    {
+      "title": "Lifestyle Changes",
+      "content": "Practical tips for diet, exercise, and lifestyle modifications to improve your health.",
+      "articles": [
+        "Diabetes-Friendly Diet Plan",
+        "Exercise Guidelines for Beginners",
+        "Stress Management Techniques",
+        "Sleep and Diabetes Management"
+      ]
+    }
+  ],
+  "lifestyleTips": [
+    {
+      "category": "Diet",
+      "tips": [
+        "Eat smaller, more frequent meals throughout the day",
+        "Choose whole grains over refined carbohydrates",
+        "Include lean proteins in every meal",
+        "Limit processed foods and added sugars",
+        "Stay hydrated with water instead of sugary drinks"
+      ]
+    },
+    {
+      "category": "Exercise",
+      "tips": [
+        "Start with 10-15 minutes of walking daily",
+        "Gradually increase to 30 minutes most days",
+        "Include both cardio and strength training",
+        "Find activities you enjoy to stay motivated",
+        "Always check with your doctor before starting new exercises"
+      ]
+    },
+    {
+      "category": "Monitoring",
+      "tips": [
+        "Check your blood sugar as recommended by your doctor",
+        "Keep a log of your readings and symptoms",
+        "Monitor your blood pressure regularly",
+        "Track your weight and body measurements",
+        "Report any unusual symptoms immediately"
+      ]
+    }
+  ],
+  "costData": {
+    "mockCost": {
+      "found": true,
+      "tier": "3",
+      "estimatedOutOfPocket": "6.72",
+      "specialtyTier": false,
+      "deductibleApplies": true
+    },
+    "hardcodedPatientId": "015786ad-e05e-2812-b3e8-11713aa05988"
+  },
+  "healthSummary": {
+    "diagnosis": "Type 2 Diabetes and Hypertension",
+    "description": "You have Type 2 Diabetes (high blood sugar condition) and Hypertension (high blood pressure). Your condition is well-managed with current medications and lifestyle changes.",
+    "status": "well-managed"
+  }
+}

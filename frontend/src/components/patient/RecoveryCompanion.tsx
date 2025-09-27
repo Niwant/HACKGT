@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -77,74 +77,28 @@ export function RecoveryCompanion({ milestones, checklist, onUpdateMilestone, on
     }
   }
 
-  const educationContent = [
-    {
-      title: "Understanding Your Condition",
-      content: "Learn about your health condition, its causes, and how to manage it effectively.",
-      articles: [
-        "What is Type 2 Diabetes?",
-        "Understanding Blood Sugar Levels",
-        "The Role of Insulin in Your Body",
-        "Long-term Complications and Prevention"
-      ]
-    },
-    {
-      title: "Medication Management",
-      content: "Everything you need to know about your medications and how to take them safely.",
-      articles: [
-        "How Metformin Works",
-        "Managing Side Effects",
-        "Drug Interactions to Avoid",
-        "When to Contact Your Doctor"
-      ]
-    },
-    {
-      title: "Lifestyle Changes",
-      content: "Practical tips for diet, exercise, and lifestyle modifications to improve your health.",
-      articles: [
-        "Diabetes-Friendly Diet Plan",
-        "Exercise Guidelines for Beginners",
-        "Stress Management Techniques",
-        "Sleep and Diabetes Management"
-      ]
-    }
-  ]
+  // Load education and lifestyle data from centralized source
+  const [educationContent, setEducationContent] = useState<any[]>([])
+  const [lifestyleTips, setLifestyleTips] = useState<any[]>([])
 
-  const lifestyleTips = [
-    {
-      category: "Diet",
-      icon: <Utensils className="w-5 h-5" />,
-      tips: [
-        "Eat smaller, more frequent meals throughout the day",
-        "Choose whole grains over refined carbohydrates",
-        "Include lean proteins in every meal",
-        "Limit processed foods and added sugars",
-        "Stay hydrated with water instead of sugary drinks"
-      ]
-    },
-    {
-      category: "Exercise",
-      icon: <Activity className="w-5 h-5" />,
-      tips: [
-        "Start with 10-15 minutes of walking daily",
-        "Gradually increase to 30 minutes most days",
-        "Include both cardio and strength training",
-        "Find activities you enjoy to stay motivated",
-        "Always check with your doctor before starting new exercises"
-      ]
-    },
-    {
-      category: "Monitoring",
-      icon: <Stethoscope className="w-5 h-5" />,
-      tips: [
-        "Check your blood sugar as recommended by your doctor",
-        "Keep a log of your readings and symptoms",
-        "Monitor your blood pressure regularly",
-        "Track your weight and body measurements",
-        "Report any unusual symptoms immediately"
-      ]
+  useEffect(() => {
+    const loadContent = async () => {
+      const { educationContent: education, lifestyleTips: lifestyle } = await import('@/lib/mockData')
+      
+      // Add icons to lifestyle tips
+      const lifestyleWithIcons = lifestyle.map((category, index) => ({
+        ...category,
+        icon: index === 0 ? <Utensils className="w-5 h-5" /> :
+              index === 1 ? <Activity className="w-5 h-5" /> :
+              <Stethoscope className="w-5 h-5" />
+      }))
+      
+      setEducationContent(education)
+      setLifestyleTips(lifestyleWithIcons)
     }
-  ]
+    
+    loadContent()
+  }, [])
 
   return (
     <div className="space-y-6">

@@ -22,112 +22,32 @@ import { RecoveryCompanion } from '@/components/patient/RecoveryCompanion'
 import { MedicationTracker } from '@/components/patient/MedicationTracker'
 import { AppointmentScheduler } from '@/components/patient/AppointmentScheduler'
 import { format } from 'date-fns'
+import { appointments, healthSummary } from '@/lib/mockData'
 
 export function PatientDashboard() {
   const { state, dispatch } = useApp()
 
-  // Mock data for patient dashboard
+  // Load mock data from centralized source
   useEffect(() => {
-    const mockMedications: Medication[] = [
-      {
-        id: '1',
-        name: 'Metformin',
-        genericName: 'Metformin HCl',
-        dosage: '500mg',
-        frequency: 'Twice daily',
-        startDate: new Date('2024-01-01'),
-        instructions: 'Take with meals to reduce stomach upset',
-        sideEffects: ['Nausea', 'Diarrhea', 'Stomach upset'],
-        cost: 15.99,
-        insuranceCovered: true,
-        drugInteractions: ['Contrast dye', 'Alcohol']
-      },
-      {
-        id: '2',
-        name: 'Lisinopril',
-        genericName: 'Lisinopril',
-        dosage: '10mg',
-        frequency: 'Once daily',
-        startDate: new Date('2024-01-15'),
-        instructions: 'Take at the same time each day',
-        sideEffects: ['Dry cough', 'Dizziness', 'Fatigue'],
-        cost: 8.50,
-        insuranceCovered: true,
-        drugInteractions: ['Potassium supplements', 'NSAIDs']
-      }
-    ]
+    const loadMockData = async () => {
+      const { 
+        fetchMedications, 
+        fetchRecoveryMilestones, 
+        fetchRehabChecklist 
+      } = await import('@/lib/mockData')
+      
+      const [medications, milestones, checklist] = await Promise.all([
+        fetchMedications('1'),
+        fetchRecoveryMilestones('1'),
+        fetchRehabChecklist('1')
+      ])
 
-    const mockMilestones: RecoveryMilestone[] = [
-      {
-        id: '1',
-        patientId: 'patient-1',
-        title: 'First HbA1c Check',
-        description: 'Complete your first HbA1c test to monitor blood sugar control',
-        targetDate: new Date('2024-02-15'),
-        isCompleted: false,
-        category: 'lab'
-      },
-      {
-        id: '2',
-        patientId: 'patient-1',
-        title: '30 Days Medication Adherence',
-        description: 'Take all medications as prescribed for 30 consecutive days',
-        targetDate: new Date('2024-02-01'),
-        isCompleted: true,
-        completedDate: new Date('2024-01-31'),
-        category: 'medication'
-      },
-      {
-        id: '3',
-        patientId: 'patient-1',
-        title: 'Start Exercise Routine',
-        description: 'Begin 30 minutes of daily walking',
-        targetDate: new Date('2024-02-10'),
-        isCompleted: false,
-        category: 'exercise'
-      }
-    ]
-
-    const mockChecklist: RehabChecklist[] = [
-      {
-        id: '1',
-        patientId: 'patient-1',
-        title: 'Take morning medication',
-        description: 'Metformin 500mg with breakfast',
-        isCompleted: true,
-        completedDate: new Date('2024-01-25'),
-        category: 'medication'
-      },
-      {
-        id: '2',
-        patientId: 'patient-1',
-        title: 'Check blood pressure',
-        description: 'Record morning blood pressure reading',
-        isCompleted: false,
-        category: 'monitoring'
-      },
-      {
-        id: '3',
-        patientId: 'patient-1',
-        title: 'Avoid grapefruit juice',
-        description: 'Skip grapefruit juice with Lisinopril',
-        isCompleted: true,
-        completedDate: new Date('2024-01-25'),
-        category: 'diet'
-      },
-      {
-        id: '4',
-        patientId: 'patient-1',
-        title: '30-minute walk',
-        description: 'Complete daily walking exercise',
-        isCompleted: false,
-        category: 'exercise'
-      }
-    ]
-
-    dispatch({ type: 'SET_RECOVERY_MILESTONES', payload: mockMilestones })
-    dispatch({ type: 'SET_REHAB_CHECKLIST', payload: mockChecklist })
-    dispatch({ type: 'SET_MEDICATIONS', payload: mockMedications })
+      dispatch({ type: 'SET_RECOVERY_MILESTONES', payload: milestones })
+      dispatch({ type: 'SET_REHAB_CHECKLIST', payload: checklist })
+      dispatch({ type: 'SET_MEDICATIONS', payload: medications })
+    }
+    
+    loadMockData()
   }, [dispatch])
 
   const completedMilestones = state.recoveryMilestones.filter(m => m.isCompleted).length
@@ -135,20 +55,7 @@ export function PatientDashboard() {
   const completedChecklist = state.rehabChecklist.filter(c => c.isCompleted).length
   const totalChecklist = state.rehabChecklist.length
 
-  const upcomingAppointments = [
-    {
-      id: '1',
-      date: new Date('2024-02-15'),
-      time: '10:00 AM',
-      type: 'in-person' as const,
-      physician: 'Dr. Smith',
-      specialty: 'Cardiology',
-      location: '123 Main St, City, State',
-      status: 'scheduled' as const,
-      notes: 'Follow-up appointment',
-      duration: 30
-    }
-  ]
+  const upcomingAppointments = appointments
 
   const handleUpdateMilestone = (milestone: RecoveryMilestone) => {
     dispatch({ type: 'UPDATE_MILESTONE', payload: milestone })
@@ -198,8 +105,7 @@ export function PatientDashboard() {
         </CardHeader>
         <CardContent>
           <p className="text-blue-800">
-            You have <strong>Type 2 Diabetes</strong> (high blood sugar condition) and <strong>Hypertension</strong> (high blood pressure). 
-            Your condition is well-managed with current medications and lifestyle changes.
+            {healthSummary.description}
           </p>
         </CardContent>
       </Card>
