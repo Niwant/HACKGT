@@ -1,4 +1,4 @@
-# MediCare Pro – Backend README
+# CuraRx - Care made clear!
 
 This README documents the backend for **MediCare Pro**: AWS RDS MySQL setup, schema & data loading commands (CMS + **Synthea** + FDA/RxNorm datasets), data hygiene/dedup routines, and a minimal Node.js API (Express + `mysql2/promise`) that integrates with the Next.js frontend.
 
