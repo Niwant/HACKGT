@@ -42,7 +42,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <h1 className="text-xl font-bold text-gray-900">
-                  {isPhysician ? 'RXHealth' : 'My Health'}
+                  {isPhysician ? 'CuraRx' : 'My Health'}
                 </h1>
               </div>
               <div className="hidden md:ml-6 md:flex md:space-x-8">

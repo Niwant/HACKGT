@@ -1,23 +1,24 @@
-# RXHealth - Healthcare Management Platform
+# CuraRx - Care, made clear
 
-A comprehensive Next.js application for healthcare management with role-based access for physicians and patients.
+A comprehensive Next.js application that bridges the gap between healthcare providers and patients with smart prescriptions, insurance coverage checking, and plain-language summaries.
 
 ## Features
 
 ### For Physicians
+- **Automatic Insurance Coverage Check**: Real-time formulary tier verification and coverage analysis
+- **AI-Powered Prior Authorization**: Automatically fills out PA forms to reduce tedious paperwork
+- **Smart Drug Alternatives**: Compare constituents using CMS and RxNorm data when coverage isn't available
+- **Faster Prescription Workflow**: Streamlined process from prescription to patient delivery
 - **Patient Management**: View and manage patient lists with sorting and filtering
 - **EMR Integration**: Timeline view of patient records with quick entry forms
-- **Prescription Workflow**: Multi-step prescription process with safety checks
-- **Drug Research Feed**: Real-time updates on FDA approvals and clinical trials
-- **Notifications**: Lab results, follow-up reminders, and alerts
-- **AI Summaries**: Generate patient summaries in 30 seconds
 
 ### For Patients
+- **Plain Language Summaries**: No medical jargon - clear explanations of what's happening and why
+- **Drug Explainer**: Answers "why this drug, how to take it, how frequently" in simple terms
+- **Lifestyle Recommendations**: Simple dietary and habit suggestions to support recovery
+- **Clarity & Confidence**: Walk away with clear understanding and actionable next steps
 - **Medication Management**: Track current prescriptions with detailed information
 - **Recovery Timeline**: Monitor health milestones and progress
-- **Daily Checklist**: Complete health-related tasks and activities
-- **Cost Transparency**: View medication costs and insurance coverage
-- **Appointment Tracking**: Manage upcoming visits and check-ups
 
 ## Tech Stack
 

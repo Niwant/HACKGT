@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RXHealth - Healthcare Management Platform",
-  description: "A comprehensive healthcare management platform for physicians and patients",
+  title: "CuraRx - Care, made clear",
+  description: "Bridging the gap between healthcare providers and patients with smart prescriptions, insurance coverage, and plain-language summaries",
 };
 
 export default function RootLayout({

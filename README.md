@@ -218,4 +218,4 @@ MIT
 
 ## Credits
 
-Built by the MediCare Pro / RxAssist team using CMS, Synthea, RxNorm, DailyMed, and FDA Orange Book data.
+Built by the CuraRX team using CMS, Synthea, RxNorm, DailyMed, and FDA Orange Book data.

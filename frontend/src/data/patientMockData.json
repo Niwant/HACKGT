@@ -395,7 +395,7 @@
     "mockCost": {
       "found": true,
       "tier": "3",
-      "estimatedOutOfPocket": "6.72",
+      "estimatedOutOfPocket": "1069",
       "specialtyTier": false,
       "deductibleApplies": true
     },

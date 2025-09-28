@@ -447,7 +447,7 @@ export function PatientProfileModal({ patient, isOpen, onClose }: PatientProfile
                     New Prescription
                   </Button>
                 </div>
-                <PriorAuthPdfFiller
+                {/* <PriorAuthPdfFiller
   src="/HiLab-Prior-Authorization-Request-Form_1-28-22.pdf"
   data={
     {
@@ -480,7 +480,7 @@ export function PatientProfileModal({ patient, isOpen, onClose }: PatientProfile
 //  yOffset={-36}
  // page 2 usually needs a hair more:
  pageOffsets={{ 1: { y: -42 } }}
-/>
+/> */}
 
                 <Accordion type="multiple" className="w-full">
                   {mockPrescriptions.map((prescription) => (

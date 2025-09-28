@@ -544,7 +544,7 @@ export function NewPrescriptionModal({ isOpen, onClose, onSave, patientId }: New
                 </div>
                 <div className="grid grid-cols-3 gap-4 mb-4">
                   <div className="space-y-2">
-                    <Label>Cost ($)</Label>
+                    <Label>Post Insurance Cost ($)</Label>
                     <div className="space-y-1">
                       <Input
                         type="number"
@@ -554,12 +554,12 @@ export function NewPrescriptionModal({ isOpen, onClose, onSave, patientId }: New
                         className={costInfo ? 'bg-blue-50 border-blue-200' : ''}
                       />
                       {costLoading && (
-                        <p className="text-xs text-blue-600">💰 Fetching cost...</p>
+                        <p className="text-xs text-blue-600">💰 Fetching post insurance cost...</p>
                       )}
                       {costInfo && (
                         <div className="text-xs space-y-1">
                           <p className="text-blue-600">
-                            💰 Auto-updated from cost API
+                            💰 Auto-updated from post insurance cost API
                             {costInfo.found === false && (
                               <span className="ml-1 text-orange-600">(using default data)</span>
                             )}
@@ -672,7 +672,7 @@ export function NewPrescriptionModal({ isOpen, onClose, onSave, patientId }: New
                       {evidenceInfo?.result?.hcp_summary && (
                         <div className="p-2 bg-gray-50 border rounded text-xs">
                           <p className="font-medium text-gray-700 mb-1">HCP Summary:</p>
-                          <p className="text-gray-600">{evidenceInfo.result.hcp_summary}</p>
+                          <strong><p className="text-gray-600">{evidenceInfo.result.hcp_summary}</p></strong>
                         </div>
                       )}
                     </div>
