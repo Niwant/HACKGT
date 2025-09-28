@@ -6,6 +6,8 @@ const {
   parsePdfToText,
   getPatientSnapshotAndCostSignals,
   buildPrompt,
+  buildSPLPrompt,
+  buildReportPrompt,
   callLLM,
 } = require('./utils');
 
@@ -134,7 +136,7 @@ app.post("/api/evidence/digest-rxcui", async (req, res) => {
       coverage: snapshot.coverage,
     });
 
-    const llmJson = await callLLM(prompt);
+    const llmJson = await callLLM(prompt, process.env.OPENAI_FETCH_MODEL);
 
     // 5) Respond
     res.json({
@@ -146,6 +148,87 @@ app.post("/api/evidence/digest-rxcui", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to process evidence digest from RXCUI", detail: err.message });
+  }
+});
+
+app.post("/api/alternative", async (req, res) => {
+
+  const start = Date.now();
+  console.log(`[alternative] START ${new Date(start).toISOString()}`);
+  try {
+    const rxcui = String(req.body?.rxcui || "").trim();
+    if (!rxcui) return res.status(400).json({ error: "rxcui is required" });
+
+    const disease = await executeQuery(`
+      select distinct DISEASE from cms_indication_coverage where RXCUI = ? limit 1;
+      `, [rxcui])
+
+    const cleanDisease = disease[0].DISEASE;
+
+    console.log(cleanDisease);
+
+    const sql = `select distinct RXCUI
+      from cms_indication_coverage
+      where DISEASE like '%${cleanDisease}%'
+      limit 10;`
+
+    const altRows = await executeQuery(sql);
+
+    console.log('alt rows: ', altRows);
+
+    if (!altRows?.length) {
+      const endNoAlts = Date.now();
+      console.log(`[alternative] END (no alternatives) ${new Date(endNoAlts).toISOString()} | total=${endNoAlts - start}ms`);
+      return res.json({ rxcui, disease: cleanDisease, alternatives: [], took_ms: endNoAlts - start });
+    }
+
+    const jobs = altRows.map(({ RXCUI: altRxcui }) => (async () => {
+      const t0 = Date.now();
+      console.log(`[alternative:${altRxcui}] job start ${new Date(t0).toISOString()}`);
+
+      // Fetch DailyMed PDF, parse, prompt, call LLM
+      const { buffer: pdfBuffer } = await getDailyMedPdfBufferByRxcui(altRxcui);
+      const pdfText = await parsePdfToText(pdfBuffer);
+      const prompt = buildSPLPrompt(pdfText);
+      const llmJson = await callLLM(prompt, process.env.OPENAI_FETCH_MODEL); // expects JSON from your extractor prompt
+
+      const t1 = Date.now();
+      console.log(`[alternative:${altRxcui}] job end ${new Date(t1).toISOString()} | took=${t1 - t0}ms`);
+
+      return { rxcui: altRxcui, llm: llmJson, took_ms: t1 - t0 };
+    })());
+
+    const settled = await Promise.allSettled(jobs);
+
+    const results = settled.map((s, idx) => {
+      const altRxcui = altRows[idx].RXCUI;
+      if (s.status === "fulfilled") {
+        return s.value; // { rxcui, llm, took_ms }
+      }
+      return {
+        rxcui: altRxcui,
+        error: s.reason?.message || String(s.reason || "Unknown error"),
+      };
+    });
+
+    const report_prompt = buildReportPrompt(results, rxcui);
+
+    const report_json = await callLLM(report_prompt, process.env.OPENAI_REASONING_MODEL);
+
+    const end = Date.now();
+    console.log(`[alternative] END ${new Date(end).toISOString()} | total=${end - start}ms`);
+
+    return res.json({
+      input_rxcui: rxcui,
+      disease: cleanDisease,
+      alternatives_checked: altRows.map(r => r.RXCUI),
+      report_json,
+      took_ms: end - start,
+    });
+  }
+  catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error in finding alternative drug for given RXCUI", detail: err.message });
   }
 });
 
