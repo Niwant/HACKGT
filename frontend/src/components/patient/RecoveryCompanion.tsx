@@ -83,10 +83,13 @@ export function RecoveryCompanion({ milestones, checklist, onUpdateMilestone, on
 
   useEffect(() => {
     const loadContent = async () => {
-      const { educationContent: education, lifestyleTips: lifestyle } = await import('@/lib/mockData')
+      const { getEducationContent, getLifestyleTips } = await import('@/lib/mockData')
+      
+      const education = await getEducationContent()
+      const lifestyle = await getLifestyleTips()
       
       // Add icons to lifestyle tips
-      const lifestyleWithIcons = lifestyle.map((category, index) => ({
+      const lifestyleWithIcons = lifestyle.map((category: any, index: number) => ({
         ...category,
         icon: index === 0 ? <Utensils className="w-5 h-5" /> :
               index === 1 ? <Activity className="w-5 h-5" /> :
@@ -310,7 +313,7 @@ export function RecoveryCompanion({ milestones, checklist, onUpdateMilestone, on
                 </CardHeader>
                 <CardContent>
                   <div className="grid gap-3">
-                    {section.articles.map((article, articleIndex) => (
+                    {section.articles.map((article: any, articleIndex: number) => (
                       <div
                         key={articleIndex}
                         className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
@@ -342,7 +345,7 @@ export function RecoveryCompanion({ milestones, checklist, onUpdateMilestone, on
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {category.tips.map((tip, tipIndex) => (
+                    {category.tips.map((tip: any, tipIndex: number) => (
                       <div key={tipIndex} className="flex items-start space-x-3">
                         <div className="w-2 h-2 bg-green-600 rounded-full mt-2"></div>
                         <span className="text-sm text-gray-700">{tip}</span>

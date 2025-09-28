@@ -28,11 +28,8 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   const navigation = isPhysician ? [
     { name: 'Dashboard', href: '/dashboard', icon: Stethoscope },
-    { name: 'Patients', href: '/patients', icon: User },
-    { name: 'Prescriptions', href: '/prescriptions', icon: Heart },
   ] : [
     { name: 'Dashboard', href: '/dashboard', icon: Heart },
-    { name: 'Recovery', href: '/recovery', icon: User },
     { name: 'Profile', href: '/profile', icon: User },
   ]
 
@@ -45,7 +42,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <h1 className="text-xl font-bold text-gray-900">
-                  {isPhysician ? 'MediCare Pro' : 'My Health'}
+                  {isPhysician ? 'RXHealth' : 'My Health'}
                 </h1>
               </div>
               <div className="hidden md:ml-6 md:flex md:space-x-8">

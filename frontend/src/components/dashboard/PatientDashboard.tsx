@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useApp } from '@/contexts/AppContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -22,10 +22,15 @@ import { RecoveryCompanion } from '@/components/patient/RecoveryCompanion'
 import { MedicationTracker } from '@/components/patient/MedicationTracker'
 import { AppointmentScheduler } from '@/components/patient/AppointmentScheduler'
 import { format } from 'date-fns'
-import { appointments, healthSummary } from '@/lib/mockData'
+import { getAppointments } from '@/lib/mockData'
 
 export function PatientDashboard() {
   const { state, dispatch } = useApp()
+
+  // State for appointments and health data
+  const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([])
+  const [prescriptions, setPrescriptions] = useState<any[]>([])
+  const [emrRecords, setEmrRecords] = useState<any[]>([])
 
   // Load mock data from centralized source
   useEffect(() => {
@@ -33,18 +38,27 @@ export function PatientDashboard() {
       const { 
         fetchMedications, 
         fetchRecoveryMilestones, 
-        fetchRehabChecklist 
+        fetchRehabChecklist,
+        fetchPrescriptions,
+        fetchEMRRecords,
+        getAppointments
       } = await import('@/lib/mockData')
       
-      const [medications, milestones, checklist] = await Promise.all([
+      const [medications, milestones, checklist, prescriptionsData, emrData, appointments] = await Promise.all([
         fetchMedications('1'),
         fetchRecoveryMilestones('1'),
-        fetchRehabChecklist('1')
+        fetchRehabChecklist('1'),
+        fetchPrescriptions('1'),
+        fetchEMRRecords('1'),
+        getAppointments()
       ])
 
       dispatch({ type: 'SET_RECOVERY_MILESTONES', payload: milestones })
       dispatch({ type: 'SET_REHAB_CHECKLIST', payload: checklist })
       dispatch({ type: 'SET_MEDICATIONS', payload: medications })
+      setUpcomingAppointments(appointments)
+      setPrescriptions(prescriptionsData)
+      setEmrRecords(emrData)
     }
     
     loadMockData()
@@ -54,8 +68,6 @@ export function PatientDashboard() {
   const totalMilestones = state.recoveryMilestones.length
   const completedChecklist = state.rehabChecklist.filter(c => c.isCompleted).length
   const totalChecklist = state.rehabChecklist.length
-
-  const upcomingAppointments = appointments
 
   const handleUpdateMilestone = (milestone: RecoveryMilestone) => {
     dispatch({ type: 'UPDATE_MILESTONE', payload: milestone })
@@ -97,18 +109,6 @@ export function PatientDashboard() {
         <h1 className="text-3xl font-bold text-gray-900">My Health Dashboard</h1>
         <p className="text-gray-600">Track your health journey and stay on top of your care plan.</p>
       </div>
-
-      {/* Diagnosis Summary */}
-      <Card className="bg-blue-50 border-blue-200">
-        <CardHeader>
-          <CardTitle className="text-blue-900">Your Health Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-blue-800">
-            {healthSummary.description}
-          </p>
-        </CardContent>
-      </Card>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -185,6 +185,9 @@ export function PatientDashboard() {
             medications={state.medications}
             onMedicationTaken={handleMedicationTaken}
             onMedicationSkipped={handleMedicationSkipped}
+            prescriptions={prescriptions}
+            emrRecords={emrRecords}
+            patientName="Lisa Baker"
           />
         </TabsContent>
 

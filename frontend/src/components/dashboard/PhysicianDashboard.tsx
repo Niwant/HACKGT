@@ -10,14 +10,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PatientProfileModal } from '@/components/patient/PatientProfileModal'
 import { 
   Users, 
-  Pill, 
   Bell, 
   TrendingUp, 
   AlertTriangle, 
   Clock,
   Search,
-  Filter,
-  Plus
+  Filter
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Patient, DrugResearch, Notification } from '@/types'
@@ -34,8 +32,8 @@ export function PhysicianDashboard() {
     const mockPatients: Patient[] = [
       {
         id: '1',
-        firstName: 'John',
-        lastName: 'Doe',
+        firstName: 'Lisa',
+        lastName: 'Baker',
         dateOfBirth: new Date('1980-05-15'),
         gender: 'male',
         phone: '+1-555-0123',
@@ -160,21 +158,9 @@ export function PhysicianDashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Physician Dashboard</h1>
-          <p className="text-gray-600">Welcome back! Here's what's happening today.</p>
-        </div>
-        <div className="flex space-x-2">
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            New Patient
-          </Button>
-          <Button variant="outline">
-            <Pill className="w-4 h-4 mr-2" />
-            New Prescription
-          </Button>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Physician Dashboard</h1>
+        <p className="text-gray-600">Welcome back! Here's what's happening today.</p>
       </div>
 
       {/* Stats Cards */}
@@ -195,7 +181,7 @@ export function PhysicianDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Prescriptions</CardTitle>
-            <Pill className="h-4 w-4 text-muted-foreground" />
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{state.prescriptions.length}</div>
@@ -305,9 +291,6 @@ export function PhysicianDashboard() {
                         onClick={() => handleViewProfile(patient)}
                       >
                         View Profile
-                      </Button>
-                      <Button size="sm">
-                        New Prescription
                       </Button>
                     </div>
                   </div>

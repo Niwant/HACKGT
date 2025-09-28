@@ -1,15 +1,15 @@
 {
   "patientProfile": {
     "id": "1",
-    "firstName": "John",
-    "lastName": "Doe",
+    "firstName": "Lisa",
+    "lastName": "Baker",
     "dateOfBirth": "1985-06-15",
-    "gender": "male",
+    "gender": "Female",
     "phone": "+1 (555) 123-4567",
-    "email": "john.doe@example.com",
+    "email": "test@gmail.com",
     "address": "123 Main Street, Apt 4B, New York, NY 10001",
     "emergencyContact": {
-      "name": "Jane Doe",
+      "name": "Max Baker",
       "phone": "+1 (555) 987-6543",
       "relationship": "Spouse"
     },
@@ -80,7 +80,7 @@
           "instructions": "Take at the same time each day",
           "refills": 3,
           "duration": "90 days",
-          "cost": 8.50,
+          "cost": 8.5,
           "insuranceCovered": true,
           "rxcui": "314076"
         }
@@ -123,6 +123,37 @@
         "renalAdjustment": false
       },
       "notes": "Seasonal allergy management. Start 2 weeks before allergy season."
+    },
+    {
+      "id": "3",
+      "patientId": "1",
+      "physicianId": "physician-1",
+      "diagnosis": "Anklet Fracture",
+      "icdCode": "Z00.00",
+      "startDate": "2025-09-28",
+      "status": "active",
+      "createdAt": "2025-09-28",
+      "medications": [
+        {
+          "id": "med-1759025347462-0",
+          "medicationId": "aspirin-1759025347462-0",
+          "name": "Aspirin",
+          "genericName": "1191",
+          "dosage": "Aspirin 500mg",
+          "frequency": "Once",
+          "instructions": "",
+          "refills": 3,
+          "duration": "30 days",
+          "cost": 6.72,
+          "insuranceCovered": false,
+          "rxcui": "1191"
+        }
+      ],
+      "safetyChecks": {
+        "allergies": true,
+        "interactions": true,
+        "renalAdjustment": false
+      }
     }
   ],
   "medications": [
@@ -134,10 +165,17 @@
       "frequency": "Twice daily",
       "startDate": "2024-01-01",
       "instructions": "Take with meals to reduce stomach upset",
-      "sideEffects": ["Nausea", "Diarrhea", "Stomach upset"],
+      "sideEffects": [
+        "Nausea",
+        "Diarrhea",
+        "Stomach upset"
+      ],
       "cost": 15.99,
       "insuranceCovered": true,
-      "drugInteractions": ["Contrast dye", "Alcohol"]
+      "drugInteractions": [
+        "Contrast dye",
+        "Alcohol"
+      ]
     },
     {
       "id": "2",
@@ -147,10 +185,30 @@
       "frequency": "Once daily",
       "startDate": "2024-01-15",
       "instructions": "Take at the same time each day",
-      "sideEffects": ["Dry cough", "Dizziness", "Fatigue"],
-      "cost": 8.50,
+      "sideEffects": [
+        "Dry cough",
+        "Dizziness",
+        "Fatigue"
+      ],
+      "cost": 8.5,
       "insuranceCovered": true,
-      "drugInteractions": ["Potassium supplements", "NSAIDs"]
+      "drugInteractions": [
+        "Potassium supplements",
+        "NSAIDs"
+      ]
+    },
+    {
+      "id": "3",
+      "name": "Aspirin",
+      "genericName": "1191",
+      "dosage": "Aspirin 500mg",
+      "frequency": "Once",
+      "startDate": "2025-09-28",
+      "instructions": "",
+      "sideEffects": [],
+      "cost": 6.72,
+      "insuranceCovered": false,
+      "drugInteractions": []
     }
   ],
   "emrRecords": [

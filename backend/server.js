@@ -170,7 +170,7 @@ app.post("/api/alternative", async (req, res) => {
     const sql = `select distinct RXCUI
       from cms_indication_coverage
       where DISEASE like '%${cleanDisease}%'
-      limit 10;`
+      limit 3;`
 
     const altRows = await executeQuery(sql);
 

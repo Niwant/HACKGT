@@ -31,7 +31,7 @@ export function NewEMREntryModal({ isOpen, onClose, onSave, patientId }: NewEMRE
 
   const [newAttachment, setNewAttachment] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     const entry: Omit<EMR, 'id' | 'patientId' | 'physicianId'> = {
@@ -45,9 +45,41 @@ export function NewEMREntryModal({ isOpen, onClose, onSave, patientId }: NewEMRE
       attachments: formData.attachments.length > 0 ? formData.attachments : undefined
     }
 
-    onSave(entry)
-    onClose()
-    resetForm()
+    try {
+      // Call API to add EMR entry to mock data
+      const response = await fetch('/api/patient-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          patientId: patientId,
+          dataType: 'emr',
+          data: {
+            ...entry,
+            date: entry.date.toISOString().split('T')[0]
+          }
+        })
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        console.log('EMR entry added to mock data:', result.emrEntry)
+        
+        // Also call the original onSave for any additional handling
+        onSave(entry)
+        
+        // Show success message
+        alert(`EMR entry created successfully! Added ${formData.type} entry to patient data.`)
+        onClose()
+        resetForm()
+      } else {
+        throw new Error('Failed to save EMR entry')
+      }
+    } catch (error) {
+      console.error('Error saving EMR entry:', error)
+      alert('Failed to save EMR entry. Please try again.')
+    }
   }
 
   const resetForm = () => {
