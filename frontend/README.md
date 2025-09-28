@@ -1,4 +1,4 @@
-# MediCare Pro - Healthcare Management Platform
+# RXHealth - Healthcare Management Platform
 
 A comprehensive Next.js application for healthcare management with role-based access for physicians and patients.
 

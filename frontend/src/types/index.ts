@@ -140,15 +140,11 @@ export interface RehabChecklist {
 }
 
 export interface CoverageInfo {
-  patientId: string
-  rxcui: string
-  coverageStatus: 'covered' | 'not_covered' | 'prior_auth_required' | 'unknown'
-  copay?: number
-  deductible?: number
-  coveragePercentage?: number
-  priorAuthRequired?: boolean
-  formularyTier?: number
-  restrictions?: string[]
-  effectiveDate?: Date
-  expirationDate?: Date
+  covered: boolean | string
+  tier: string
+  priorAuthorization: boolean | string
+  stepTherapy: boolean | string
+  quantityLimit: boolean | string
+  quantityLimitAmount: string
+  quantityLimitDays: number
 }

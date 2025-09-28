@@ -111,6 +111,45 @@ async function getPatientSnapshotAndCostSignals(patientId, rxcui) {
   };
 }
 
+function buildSPLPrompt(pdfText) {
+  return `
+    <PDF SPL Start>
+    ${pdfText}
+    <PDF SPL End>
+    You are given the FDA Structured Product Label (SPL) for a prescription drug.  
+    Extract the key prescribing information into a concise JSON with the following fields.  
+    Keep values short, using text snippets directly from the label. Do not generate extra commentary.
+
+    Fields to extract:
+    - drug_name
+    - active_ingredients
+    - indications
+    - contraindications
+    - warnings_precautions
+    - adverse_reactions
+    - drug_interactions
+    - dosage_administration
+    - use_in_specific_populations
+    - mechanism_of_action
+
+    Return only valid JSON, no explanation.
+
+    Example Output
+    {
+      "drug_name": "Leucovorin Calcium",
+      "active_ingredients": ["Leucovorin calcium"],
+      "indications": "Rescue after high-dose methotrexate therapy; treatment of megaloblastic anemia due to folate deficiency",
+      "contraindications": "Known hypersensitivity to leucovorin products or folic acid",
+      "warnings_precautions": "Do not use with pernicious anemia; may enhance toxic effects of fluorouracil",
+      "adverse_reactions": "Allergic reactions, urticaria, anaphylactoid reactions",
+      "drug_interactions": "Interacts with fluorouracil and trimethoprim-sulfamethoxazole",
+      "dosage_administration": "Typically 10–20 mg IV every 6 hours for rescue after methotrexate",
+      "use_in_specific_populations": "Use with caution in pregnant women; safety in pediatric patients established",
+      "mechanism_of_action": "Leucovorin is a reduced folate that bypasses dihydrofolate reductase"
+    }
+  `
+}
+
 function buildPrompt({ pdfText, rxcui, patient, coverage }) {
   return `
 You are a clinical decision support assistant.
@@ -166,9 +205,85 @@ TASK
 ONLY return valid JSON conforming to this schema.`;
 }
 
-async function callLLM(prompt) {
+function buildReportPrompt(results, inputRxcui){
+  const ok = results
+    .filter(r => r && !r.error && r.llm && typeof r.llm === "object");
+
+  const drugs = ok.map(({ rxcui, llm }) => ({
+    rxcui,
+    drug_name: llm.drug_name ?? null,
+    active_ingredients: llm.active_ingredients ?? null,
+    indications: llm.indications ?? null,
+    contraindications: llm.contraindications ?? null,
+    warnings_precautions: llm.warnings_precautions ?? null,
+    adverse_reactions: llm.adverse_reactions ?? null,
+    drug_interactions: llm.drug_interactions ?? null,
+    dosage_administration: llm.dosage_administration ?? null,
+    use_in_specific_populations: llm.use_in_specific_populations ?? null,
+    mechanism_of_action: llm.mechanism_of_action ?? null,
+  }));
+
+  const payload = { input_rxcui: inputRxcui, drugs };
+
+  return `
+    You are given structured JSON data for multiple drugs that treat the same disease.
+    Each drug entry includes fields like drug_name, active_ingredients, indications, contraindications, warnings_precautions, adverse_reactions, drug_interactions, dosage_administration, use_in_specific_populations, and mechanism_of_action.
+
+    <Comparative Study Input>
+    ${JSON.stringify(payload)}
+    <Comparative Study End>
+
+    Your task: perform a comparative study across all drugs.
+
+    Instructions:
+
+    Compare each drug against the others field by field.
+
+    For each property, compute a % match (0 to 100%) with the input drug.
+
+    Be concise: use semantic similarity (not just string match).
+
+    Highlight key differences for clinicians.
+
+    Provide a one-line recommendation comment per drug, helping doctors make a quick decision.
+
+    Focus on clinical fit, safety, and substitution feasibility.
+
+    Example style: “Similar efficacy but higher GI side effects” or “Nearly identical indications, safer for renal patients”.
+
+    Keep the output in JSON format for easy consumption.
+
+    Output JSON Format:
+    {
+      "comparisons": [
+        {
+          "rxcui": "<drug_rxcui>",
+          "drug_name": "<name>",
+          "similarity": {
+            "active_ingredients": "95%",
+            "indications": "90%",
+            "contraindications": "100%",
+            "warnings_precautions": "85%",
+            "adverse_reactions": "80%",
+            "drug_interactions": "100%",
+            "dosage_administration": "95%",
+            "use_in_specific_populations": "85%",
+            "mechanism_of_action": "100%"
+          },
+          "doctor_note": "✅ Good alternative; nearly identical profile, minor difference in dosing schedule."
+        }
+      ]
+    }
+    Constraints:
+    Use short % values (rounded to nearest 5).
+    Keep doctor_note under 20 words, focused on actionable clinical insight.
+    Do not output explanations, only the JSON.
+  `
+}
+
+async function callLLM(prompt, AIModel) {
   const base = process.env.OPENAI_BASE || 'https://api.openai.com/v1';
-  const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+  const model = AIModel // process.env.OPENAI_MODEL || 'gpt-4o-mini';
   const headers = {
     Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
     'Content-Type': 'application/json',
@@ -181,7 +296,6 @@ async function callLLM(prompt) {
         { role: 'system', content: 'You output strict JSON only.' },
         { role: 'user', content: prompt },
       ],
-      temperature: 0.1,
     },
     { headers, timeout: 45000 }
   );
@@ -194,9 +308,11 @@ async function callLLM(prompt) {
 }
 
 module.exports = {
-  pool, // export in case elsewhere needs it
+  pool,
   parsePdfToText,
   getPatientSnapshotAndCostSignals,
+  buildSPLPrompt,
   buildPrompt,
+  buildReportPrompt,
   callLLM,
 };

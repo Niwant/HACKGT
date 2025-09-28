@@ -38,17 +38,13 @@ export async function fetchCoverageInfo(
     return {
       success: true,
       data: {
-        patientId: data.patientId || patientId,
-        rxcui: data.rxcui || rxcui,
-        coverageStatus: data.coverageStatus || 'unknown',
-        copay: data.copay,
-        deductible: data.deductible,
-        coveragePercentage: data.coveragePercentage,
-        priorAuthRequired: data.priorAuthRequired,
-        formularyTier: data.formularyTier,
-        restrictions: data.restrictions || [],
-        effectiveDate: data.effectiveDate ? new Date(data.effectiveDate) : undefined,
-        expirationDate: data.expirationDate ? new Date(data.expirationDate) : undefined,
+        covered: data.covered,
+        tier: data.tier,
+        priorAuthorization: data.priorAuthorization,
+        stepTherapy: data.stepTherapy,
+        quantityLimit: data.quantityLimit,
+        quantityLimitAmount: data.quantityLimitAmount,
+        quantityLimitDays: data.quantityLimitDays,
       }
     }
   } catch (error) {
@@ -71,7 +67,7 @@ export async function isMedicationCovered(
   rxcui: string
 ): Promise<boolean> {
   const result = await fetchCoverageInfo(patientId, rxcui)
-  return result.success && result.data?.coverageStatus === 'covered'
+  return result.success && (result.data?.covered === true || result.data?.covered === "true")
 }
 
 /**
@@ -85,7 +81,7 @@ export async function isPriorAuthRequired(
   rxcui: string
 ): Promise<boolean> {
   const result = await fetchCoverageInfo(patientId, rxcui)
-  return result.success && (result.data?.priorAuthRequired || result.data?.coverageStatus === 'prior_auth_required')
+  return result.success && (result.data?.priorAuthorization === true || result.data?.priorAuthorization === "true")
 }
 
 export interface EvidenceApiResponse {

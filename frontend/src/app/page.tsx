@@ -44,7 +44,7 @@ export default function Home() {
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-16">
           <h1 className="text-6xl font-bold text-gray-900 mb-6">
-            MediCare Pro
+            RXHealth
           </h1>
           <p className="text-2xl text-gray-700 mb-4">
             The Future of Healthcare Management
@@ -131,7 +131,7 @@ export default function Home() {
         {/* Key Features Section */}
         <div className="max-w-6xl mx-auto mb-16">
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-            Why Choose MediCare Pro?
+            Why Choose RXHealth?
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
             <Card className="text-center p-6 hover:shadow-lg transition-shadow">
@@ -206,7 +206,7 @@ export default function Home() {
             Ready to Transform Healthcare?
           </h2>
           <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
-            Join thousands of healthcare professionals and patients who are already using MediCare Pro to improve care delivery and health outcomes.
+            Join thousands of healthcare professionals and patients who are already using RXHealth to improve care delivery and health outcomes.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/sign-up">

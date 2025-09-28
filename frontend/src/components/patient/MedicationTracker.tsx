@@ -16,15 +16,20 @@ import {
   Shield,
   Info,
   TrendingUp,
-  Bell
+  Bell,
+  Sparkles
 } from 'lucide-react'
-import { Medication } from '@/types'
+import { Medication, EMR, Prescription } from '@/types'
 import { format, isAfter, isBefore, differenceInDays } from 'date-fns'
+import { MedicationSummaryModal } from './MedicationSummaryModal'
 
 interface MedicationTrackerProps {
   medications: Medication[]
   onMedicationTaken: (medicationId: string, time: Date) => void
   onMedicationSkipped: (medicationId: string, reason: string) => void
+  prescriptions?: Prescription[]
+  emrRecords?: EMR[]
+  patientName?: string
 }
 
 interface MedicationLog {
@@ -34,9 +39,10 @@ interface MedicationLog {
   reason?: string
 }
 
-export function MedicationTracker({ medications, onMedicationTaken, onMedicationSkipped }: MedicationTrackerProps) {
+export function MedicationTracker({ medications, onMedicationTaken, onMedicationSkipped, prescriptions = [], emrRecords = [], patientName = 'Patient' }: MedicationTrackerProps) {
   const [activeTab, setActiveTab] = useState<'today' | 'schedule' | 'history' | 'costs'>('today')
   const [medicationLogs, setMedicationLogs] = useState<MedicationLog[]>([])
+  const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false)
 
   const today = new Date()
   const todayLogs = medicationLogs.filter(log => 
@@ -179,10 +185,22 @@ export function MedicationTracker({ medications, onMedicationTaken, onMedication
         <TabsContent value="today" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Today's Medication Schedule</CardTitle>
-              <CardDescription>
-                Track your daily medication intake
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Today's Medication Schedule</CardTitle>
+                  <CardDescription>
+                    Track your daily medication intake
+                  </CardDescription>
+                </div>
+                <Button 
+                  onClick={() => setIsSummaryModalOpen(true)}
+                  variant="outline"
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 border-0"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Summarize Medications
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -433,6 +451,16 @@ export function MedicationTracker({ medications, onMedicationTaken, onMedication
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Medication Summary Modal */}
+      <MedicationSummaryModal
+        isOpen={isSummaryModalOpen}
+        onClose={() => setIsSummaryModalOpen(false)}
+        medications={medications}
+        prescriptions={prescriptions}
+        emrRecords={emrRecords}
+        patientName={patientName}
+      />
     </div>
   )
 }

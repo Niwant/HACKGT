@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MediCare Pro - Healthcare Management Platform",
+  title: "RXHealth - Healthcare Management Platform",
   description: "A comprehensive healthcare management platform for physicians and patients",
 };
 
