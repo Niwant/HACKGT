@@ -1,5 +1,4 @@
-# MediCare Pro - Healthcare Management Platform
-
+# CuraRx - Care made clear!
 A comprehensive Next.js application for healthcare management with role-based access for physicians and patients.
 
 ## Features
